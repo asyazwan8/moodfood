@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-label="Dala horse">
+  <!--
+    STAND-IN ASSET — hand-drawn Dala horse (Dalahast) silhouette.
+    The Dala horse has been IPC Shopping Centre's mark since it opened; this is a
+    faithful stand-in, not the official artwork. Drop IPC's real mark in over this
+    file and nothing else in the app needs to change.
+  -->
+  <g fill="currentColor">
+    <!-- tail, drawn behind the rump so the two read as one silhouette -->
+    <path d="
+      M196 84
+      C222 88 236 112 232 138
+      C229 156 216 165 204 158
+      C192 151 186 136 188 118
+      C190 102 190 87 196 84
+      Z" />
+    <!-- head, neck, body and legs in one closed outline -->
+    <path d="
+      M16 32
+      C14 26 18 21 25 20
+      L52 18
+      L59 0
+      L75 23
+      C95 37 111 58 121 85
+      C143 77 167 75 183 82
+      C197 88 204 98 205 112
+      L205 178
+      C205 184 201 188 195 188
+      L183 188
+      C177 188 173 184 173 178
+      L173 141
+      L118 141
+      L118 178
+      C118 184 114 188 108 188
+      L96 188
+      C90 188 86 184 86 178
+      L86 127
+      C79 109 67 93 53 83
+      C47 75 43 68 41 60
+      C34 55 24 52 16 50
+      Z" />
+  </g>
+</svg>

@@ -1,0 +1,84 @@
+/*
+ * Brand CSS custom properties, derived from src/brand/tokens.ts.
+ *
+ * SWAPPING IN IPC'S REAL TYPEFACE: drop the woff2 files into public/brand/ and
+ * add an @font-face block here, then change --font-display / --font-body to
+ * name it. No component references a font family directly.
+ */
+
+@import '@fontsource-variable/nunito';
+@import '@fontsource-variable/inter';
+
+:root {
+  --ink: #140a1e;
+  --ink-soft: #241236;
+
+  --red: #e4322b;
+  --amber: #ffb03b;
+  --rose: #e8467f;
+  --teal: #17a79c;
+  --blue: #3d6be5;
+  --violet: #8b5cf6;
+
+  --cream: #fff4e6;
+  --cream-dim: rgba(255, 244, 230, 0.62);
+  --cream-faint: rgba(255, 244, 230, 0.28);
+
+  --font-display: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+
+  /* Design-size radii. The stage scales these along with everything else. */
+  --r-sm: 16px;
+  --r-md: 32px;
+  --r-lg: 56px;
+  --r-pill: 999px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-body);
+}
+
+/* A kiosk is touched by strangers all day. Nothing should be selectable,
+   draggable, long-press-menu-able, or able to bounce-scroll. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  cursor: none;
+}
+
+/* The one exception: keep a cursor when a developer is driving it on a desk. */
+body[data-debug='1'] {
+  cursor: default;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
