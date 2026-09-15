@@ -7,10 +7,12 @@ export type SceneId =
   | 'idle'
   | 'consent'
   | 'warmup'
-  | 'exercises'
+  | 'read'
   | 'reading'
   | 'mood'
   | 'encouragement'
+  | 'game'
+  | 'score'
   | 'food'
   | 'thanks';
 
@@ -19,10 +21,12 @@ export const SCENES: SceneId[] = [
   'idle',
   'consent',
   'warmup',
-  'exercises',
+  'read',
   'reading',
   'mood',
   'encouragement',
+  'game',
+  'score',
   'food',
   'thanks',
 ];
@@ -33,8 +37,14 @@ export type Session = {
   seed: number;
   daypart: Daypart;
   mood: MoodId | null;
-  /** One photo per exercise round, in order. Nulls where a round got none. */
+  /** The portrait taken during the read. Shown on the mood reveal. */
+  readPhoto: string | null;
+  /** One photo per game round, in order. Nulls where a round got none. */
   shots: (string | null)[];
+  /** One score per game round, out of 100. */
+  scores: number[];
+  /** The round they scored highest on, for the score card's closing line. */
+  bestFace: string | null;
   shortlist: Outlet[];
   foodIndex: number;
   /** True when we finished the story without ever seeing a face. */
@@ -46,8 +56,9 @@ export type Action =
   | { type: 'cameraReady' }
   | { type: 'cameraRefused' }
   | { type: 'faceFound' }
-  | { type: 'exercisesDone'; mood: MoodId; shots: (string | null)[] }
+  | { type: 'readDone'; mood: MoodId; photo: string | null }
   | { type: 'readingDone' }
+  | { type: 'gameDone'; shots: (string | null)[]; scores: number[]; bestFace: string | null }
   | { type: 'next' }
   | { type: 'shortlist'; outlets: Outlet[] }
   | { type: 'anotherFood' }
@@ -59,7 +70,10 @@ export function freshSession(): Session {
     seed: newSeed(),
     daypart: daypartFor(),
     mood: null,
+    readPhoto: null,
     shots: [],
+    scores: [],
+    bestFace: null,
     shortlist: [],
     foodIndex: 0,
     blind: false,
@@ -70,7 +84,8 @@ export function freshSession(): Session {
 const ON_PRESS: Partial<Record<SceneId, SceneId>> = {
   idle: 'consent',
   mood: 'encouragement',
-  encouragement: 'food',
+  encouragement: 'game',
+  score: 'food',
   food: 'thanks',
 };
 
@@ -91,14 +106,25 @@ export function reduce(state: Session, action: Action): Session {
     case 'cameraRefused':
       // No face, but we still owe them the ending we promised: skip the parts
       // that would be a lie and go straight to feeding them.
-      return { ...state, scene: 'food', mood: 'steady', blind: true, shots: [] };
+      return { ...state, scene: 'food', mood: 'steady', blind: true, shots: [], readPhoto: null };
 
     case 'faceFound':
-      return state.scene === 'warmup' ? { ...state, scene: 'exercises' } : state;
+      return state.scene === 'warmup' ? { ...state, scene: 'read' } : state;
 
-    case 'exercisesDone':
-      return state.scene === 'exercises'
-        ? { ...state, scene: 'reading', mood: action.mood, shots: action.shots }
+    case 'readDone':
+      return state.scene === 'read'
+        ? { ...state, scene: 'reading', mood: action.mood, readPhoto: action.photo }
+        : state;
+
+    case 'gameDone':
+      return state.scene === 'game'
+        ? {
+            ...state,
+            scene: 'score',
+            shots: action.shots,
+            scores: action.scores,
+            bestFace: action.bestFace,
+          }
         : state;
 
     case 'readingDone':

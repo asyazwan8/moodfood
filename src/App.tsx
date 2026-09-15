@@ -5,7 +5,15 @@ import { usePress } from './kiosk/usePress';
 import { useIdleTimeout } from './kiosk/useIdleTimeout';
 import { Backdrop } from './backdrop/Backdrop';
 import { IDLE_TINT, MOODS, type MoodId } from './mood/moods';
-import { EXERCISES, ROUND_TIMEOUT_MS, moodFromExercises, type Attempt } from './mood/classify';
+import {
+  EXERCISES,
+  READ_WINDOW_MS,
+  ROUND_TIMEOUT_MS,
+  moodFromRead,
+  scoreOf,
+  READ_CHANNELS,
+  type Attempt,
+} from './mood/classify';
 import { pickFood } from './recommend/pickFood';
 import { canPress, freshSession, reduce, type SceneId } from './story/machine';
 import { useVision } from './vision/useVision';
@@ -13,7 +21,9 @@ import { CameraView } from './scenes/CameraView';
 import { Idle } from './scenes/Idle';
 import { Consent } from './scenes/Consent';
 import { Warmup } from './scenes/Warmup';
-import { Exercises } from './scenes/Exercises';
+import { Read } from './scenes/Read';
+import { Game } from './scenes/Game';
+import { ScoreCard } from './scenes/ScoreCard';
 import { Reading } from './scenes/Reading';
 import { MoodReveal } from './scenes/MoodReveal';
 import { Encouragement } from './scenes/Encouragement';
@@ -42,6 +52,7 @@ const WAITS_FOR_A_HUMAN: ReadonlySet<SceneId> = new Set<SceneId>([
   'consent',
   'mood',
   'encouragement',
+  'score',
   'food',
 ]);
 
@@ -61,6 +72,8 @@ export function App() {
 
   const { scene } = session;
   const [round, setRound] = useState({ index: 0, hit: false, escaped: false, flashing: false });
+  const [runningScore, setRunningScore] = useState(0);
+  const [readLeft, setReadLeft] = useState(READ_WINDOW_MS / 1000);
 
   useEffect(() => {
     document.body.dataset.debug = debug ? '1' : '0';
@@ -135,10 +148,40 @@ export function App() {
     return () => window.clearInterval(id);
   }, [scene]);
 
-  // ── the exercise rounds ──────────────────────────────────────────────────
+  // ── the read: the only thing that decides the mood ───────────────────────
 
   useEffect(() => {
-    if (scene !== 'exercises') {
+    if (scene !== 'read') {
+      setReadLeft(READ_WINDOW_MS / 1000);
+      return;
+    }
+
+    vision.beginRead();
+    const startedAt = performance.now();
+
+    const tick = window.setInterval(() => {
+      const left = (READ_WINDOW_MS - (performance.now() - startedAt)) / 1000;
+      setReadLeft(Math.max(0, left));
+      if (left > 0) return;
+
+      window.clearInterval(tick);
+      const { peaks, photo } = vision.endRead();
+      dispatch({
+        type: 'readDone',
+        mood: forcedMood ?? moodFromRead(peaks, session.daypart),
+        photo,
+      });
+    }, 100);
+
+    return () => window.clearInterval(tick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene]);
+
+  // ── the game rounds ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (scene !== 'game') {
+      setRunningScore(0);
       setRound({ index: 0, hit: false, escaped: false, flashing: false });
       return;
     }
@@ -146,18 +189,26 @@ export function App() {
     let index = 0;
     let cancelled = false;
     let poll = 0;
+    let total = 0;
     const attempts: Attempt[] = [];
     const shots: (string | null)[] = [];
+    const scores: number[] = [];
     const timeouts: number[] = [];
 
     const closeRound = (escaped: boolean) => {
       const result = vision.endRound();
-      attempts.push({
+      const attempt: Attempt = {
         exerciseId: result.exerciseId,
         peak: result.peak,
         timeToHit: result.timeToHit,
-      });
+      };
+      const exercise = EXERCISES[index];
+      attempts.push(attempt);
       shots.push(result.photo);
+      const points = exercise ? scoreOf(attempt, exercise) : 0;
+      scores.push(points);
+      total += points;
+      setRunningScore(total);
       setRound({ index, hit: !escaped, escaped, flashing: !escaped });
 
       timeouts.push(
@@ -165,13 +216,18 @@ export function App() {
           if (cancelled) return;
           index += 1;
           if (index >= EXERCISES.length) {
-            dispatch({
-              type: 'exercisesDone',
-              mood:
-                forcedMood ??
-                moodFromExercises(attempts, vision.sessionPeaks(), session.daypart),
-              shots,
+            // Name the round they were best at, but only if they actually
+            // landed it — praising someone for their best failure is worse
+            // than saying nothing.
+            let bestFace: string | null = null;
+            let bestScore = 0;
+            scores.forEach((points, i) => {
+              if (points > bestScore && attempts[i]?.timeToHit !== null) {
+                bestScore = points;
+                bestFace = EXERCISES[i]?.id ?? null;
+              }
             });
+            dispatch({ type: 'gameDone', shots, scores, bestFace });
             return;
           }
           startRound();
@@ -245,16 +301,12 @@ export function App() {
 
   // ── background ───────────────────────────────────────────────────────────
 
-  const revealed =
-    scene === 'reading' ||
-    scene === 'mood' ||
-    scene === 'encouragement' ||
-    scene === 'food' ||
-    scene === 'thanks';
+  // Everything from the reading beat onward wears the visitor's mood colour.
+  const revealed = scene !== 'idle' && scene !== 'consent' && scene !== 'warmup' && scene !== 'read';
   const tint = revealed && session.mood ? MOODS[session.mood].tint : IDLE_TINT;
 
   const intensity =
-    scene === 'reading' ? 1 : scene === 'exercises' ? 0.3 : scene === 'mood' ? 0.35 : 0;
+    scene === 'reading' ? 1 : scene === 'game' ? 0.3 : scene === 'mood' ? 0.35 : scene === 'read' ? 0.2 : 0;
 
   const camera = cameraLayout(scene);
   const activeExercise = EXERCISES[round.index];
@@ -309,22 +361,35 @@ export function App() {
         );
       case 'warmup':
         return <Warmup faceFound={vision.state.faceFound} seed={session.seed} />;
-      case 'exercises':
+      case 'read':
         return (
-          <Exercises
+          <Read
+            strongest={Math.max(...READ_CHANNELS.map((c) => vision.state.expressions[c]))}
+            seconds={readLeft}
+            seed={session.seed}
+          />
+        );
+      case 'game':
+        return (
+          <Game
             index={round.index}
             value={channelValue}
             progress={activeExercise ? channelValue / activeExercise.threshold : 0}
             hit={round.hit}
             escaped={round.escaped}
             flashing={round.flashing}
+            total={runningScore}
             seed={session.seed}
           />
+        );
+      case 'score':
+        return (
+          <ScoreCard shots={session.shots} scores={session.scores} bestFace={session.bestFace} />
         );
       case 'reading':
         return <Reading seed={session.seed} />;
       case 'mood':
-        return <MoodReveal mood={session.mood ?? 'steady'} shots={session.shots} />;
+        return <MoodReveal mood={session.mood ?? 'steady'} photo={session.readPhoto} />;
       case 'encouragement':
         return <Encouragement mood={session.mood ?? 'steady'} seed={session.seed} />;
       case 'food': {
@@ -354,13 +419,22 @@ export function App() {
       dispatch({ type: 'cameraReady' });
       if (next === 'warmup') return;
       dispatch({ type: 'faceFound' });
-      if (next === 'exercises') return;
-      dispatch({ type: 'exercisesDone', mood, shots: [null, null, null, null] });
+      if (next === 'read') return;
+      dispatch({ type: 'readDone', mood, photo: null });
       if (next === 'reading') return;
       dispatch({ type: 'readingDone' });
       if (next === 'mood') return;
       dispatch({ type: 'next' });
       if (next === 'encouragement') return;
+      dispatch({ type: 'next' });
+      if (next === 'game') return;
+      dispatch({
+        type: 'gameDone',
+        shots: [null, null, null, null],
+        scores: [70, 55, 40, 85],
+        bestFace: 'laugh',
+      });
+      if (next === 'score') return;
       dispatch({ type: 'next' });
       if (next === 'food') return;
       dispatch({ type: 'next' });
@@ -373,7 +447,8 @@ function cameraLayout(scene: SceneId): { diameter: number; top: number; visible:
   switch (scene) {
     case 'warmup':
       return { diameter: 640, top: 560, visible: true };
-    case 'exercises':
+    case 'read':
+    case 'game':
       // Centred inside the 700px meter ring, which sits at top: 420.
       return { diameter: 560, top: 490, visible: true };
     default:

@@ -29,6 +29,7 @@ Then open Chrome DevTools → device toolbar → add a custom device at **1080 �
 | `?mock=1` | Skips the camera entirely and drives a scripted face. Walk the whole story with no webcam and no permission prompt. |
 | `?debug=1` | Live expression probabilities, camera state, smile score, and buttons to jump to any scene. |
 | `?mood=heavy` | Forces a mood, so you can rehearse a specific ending. Any id from `src/mood/moods.ts`. |
+| `?show=angry` | With `?mock=1`, sets which expression the fake read pretends to see, so every mood can be walked without a face. |
 
 On the kiosk itself, a **three-second long-press in the top-left corner** opens the debug
 panel — there is no keyboard on a mall floor.
@@ -55,47 +56,42 @@ Grant the camera permission once and Chrome remembers it for that origin.
 
 ## How it actually works
 
-### The mood comes from four performed faces
+### The mood comes from one open read
 
-The visitor is asked to pull four expressions — **smile, angry, sad, laugh** — and the
-kiosk confirms each one. Whichever came *easiest* decides the mood.
+The visitor is asked **"show me how you are feeling right now"** and pulls whatever face is
+true. That single read decides the mood, and nothing afterwards changes it.
 
-This replaced a passive read taken while the visitor stood still reading the screen. That
-version returned **"Steady" for almost everybody**, because a resting face at a kiosk is
-just `neutral ≈ 0.9`. Making people perform is both more reliable and the best part of
-standing in front of it.
+`src/mood/classify.ts` then takes a straight argmax over the six real emotions. There is no
+cross-channel comparison problem, because the visitor chose what to express — nothing is
+competing against a different question.
 
-Three things in `src/mood/classify.ts` are load-bearing, and `npm test` covers all of them:
+Two things in there are load-bearing, and `npm test` covers both:
 
-- **Scores are relative to each round's own threshold.** face-api reads `happy` superbly
-  and `angry`/`sad` badly — a genuinely furious face often peaks around 0.35. Comparing
-  raw peaks would hand the win to the smile round every time.
-- **Strength is capped at 1.0.** Clearing the bar is clearing it. Without the cap the
-  easiest round always wins: a real laugh is ~1.9x the smile threshold but only ~1.1x the
-  laugh threshold, so someone laughing their head off would be told they were merely Warm.
-- **Smile and laugh are the same channel.** Reaching the laugh threshold means the smile
-  round was sailed through, so the smile result carries no information and is dropped.
-- **The side channels are a fallback, not an override.** `surprised`, `fearful` and
-  `disgusted` only decide the mood when nothing was performed. They used to run first, and
-  because pulling an angry or laughing face raises the brows and opens the mouth — which
-  face-api reads as `surprised` — virtually every visitor came out "Wide awake" regardless
-  of what they did.
+- **`neutral` is excluded entirely.** It dominates every resting face, and letting it compete
+  is exactly what made an earlier version answer "Steady" to virtually everybody.
+- **There is a noise floor of 0.25.** A resting face idles with `sad` around 0.1 and it is
+  frequently the largest non-neutral channel, so without a floor the kiosk would tell people
+  standing perfectly still that they are Carrying something. Below the floor the answer is
+  Steady, or Running on empty in the evening — "nothing in particular" is a real answer.
 
-**Every round has an ~8s escape**, and it is never presented as failure. Plenty of people
-cannot trigger angry or sad however hard they try, and being told you failed at having a
-feeling is a bad note to hit in a shopping mall.
+### The game is only a game
+
+The four faces (smile, angry, sad, laugh) run **after** the mood has been revealed and score
+out of 400. They cannot change the mood. Earlier versions folded the measurement into the
+game, which meant the reading was really "which face can you pull fastest" — a thin proxy for
+how anyone feels.
+
+Scoring still normalises against each round's own threshold, because face-api reads `happy`
+superbly and `angry`/`sad` badly — a genuinely furious face often peaks around 0.35. And the
+hit and miss score bands cannot overlap, or a near miss outscores a slow but genuine hit,
+which it did, 24 to 15, until the floor was raised.
+
+**Every round has an ~8s escape**, never presented as failure. Plenty of people cannot
+trigger angry or sad however hard they try.
 
 > ⚠️ **The thresholds are estimates and must be tuned against real faces.** Use `?debug=1`,
 > which shows the live value for the active round against what it needs. Expect `angry` and
 > `sad` to need the most adjustment.
-
-### Offline by construction
-
-`@vladmandic/face-api` ships its model weights inside the npm package.
-`scripts/copy-models.mjs` copies the three this kiosk uses into `public/models/` at install
-time (~600 KB), the service worker precaches them, and the app loads them from its own
-origin. Fonts come from `@fontsource-variable/*` for the same reason, and the closing QR
-code is generated locally.
 
 ### Three iOS Safari workarounds
 
@@ -185,9 +181,11 @@ src/
   ui/         typewriter, smile meter, polaroid, QR, press cue
 ```
 
-## The nine beats
+## The eleven beats
 
-`idle → consent → warmup → exercises → reading → mood → encouragement → food → thanks`
+`idle → consent → warmup → read → reading → mood → encouragement → game → score → food → thanks`
+
+Read, tell, play, feed.
 
 Each one advances on a press, except the ones the kiosk drives itself. Every self-driven
 scene has a timeout so nobody is ever stranded: no face found, no smile given, camera

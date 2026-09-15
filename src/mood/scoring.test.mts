@@ -1,16 +1,18 @@
 /**
- * Scoring tests for the face-exercise mood read.
+ * Tests for the mood read and the game's scoring.
  *
- * Run with `npm test`. These exist because the scoring is the whole feature —
- * if it is wrong the kiosk goes back to telling everybody the same thing,
- * which is the bug this replaced. Two of the cases below are regressions that
- * were caught here and nowhere else:
- *
- *  · a real laugh being downgraded to "Warm", because smile and laugh share
- *    the `happy` channel and the smile threshold is lower;
- *  · a big raw smile beating a genuinely hard-won angry face.
+ * Run with `npm test`. The read is the whole product — if it is wrong the
+ * kiosk goes back to telling everyone the same thing, which is the bug this
+ * design replaced. Several cases below are regressions caught here and
+ * nowhere else.
  */
-import { EXERCISES, easeOf, moodFromExercises, EMPTY_EXPRESSIONS } from './classify.ts';
+import {
+  EXERCISES,
+  EMPTY_EXPRESSIONS,
+  moodFromRead,
+  scoreOf,
+  type Expressions,
+} from './classify.ts';
 
 const ok = (label: string, got: unknown, want: unknown) => {
   const pass = got === want;
@@ -18,95 +20,64 @@ const ok = (label: string, got: unknown, want: unknown) => {
   if (!pass) process.exitCode = 1;
 };
 
-const A = (id: string, peak: number, timeToHit: number | null) => ({ exerciseId: id, peak, timeToHit });
-const none = { ...EMPTY_EXPRESSIONS };
+/** Peaks for a read, with everything unmentioned left at zero. */
+const read = (p: Partial<Expressions>): Expressions => ({ ...EMPTY_EXPRESSIONS, ...p });
 const day = 'afternoon' as const;
 
-console.log('\nwhich face came easiest:');
-// Snapped into an angry face instantly; smiled slowly and weakly.
-ok('fast angry beats slow smile',
-  moodFromExercises([A('smile', 0.55, 6000), A('angry', 0.62, 900), A('sad', 0.1, null), A('laugh', 0.5, null)], none, day),
-  'fired');
-// Big instant laugh.
-ok('instant laugh wins',
-  moodFromExercises([A('smile', 0.9, 400), A('angry', 0.3, 7000), A('sad', 0.1, null), A('laugh', 0.97, 700)], none, day),
-  'bright');
-// Sad came easily, nothing else did.
-ok('easy sad wins',
-  moodFromExercises([A('smile', 0.4, null), A('angry', 0.1, null), A('sad', 0.55, 800), A('laugh', 0.2, null)], none, day),
-  'heavy');
-// A comfortable smile but never a real laugh.
-ok('smile without laugh → warm',
-  moodFromExercises([A('smile', 0.72, 700), A('angry', 0.12, null), A('sad', 0.08, null), A('laugh', 0.6, null)], none, day),
-  'warm');
+console.log('\nthe six channels each reach their own mood:');
+ok('big smile → bright', moodFromRead(read({ happy: 0.94 }), day), 'bright');
+ok('small smile → warm', moodFromRead(read({ happy: 0.55 }), day), 'warm');
+ok('sad → heavy', moodFromRead(read({ sad: 0.6 }), day), 'heavy');
+ok('angry → fired', moodFromRead(read({ angry: 0.45 }), day), 'fired');
+ok('surprised → sparked', moodFromRead(read({ surprised: 0.7 }), day), 'sparked');
+ok('fearful → wound', moodFromRead(read({ fearful: 0.5 }), day), 'wound');
+ok('disgusted → over', moodFromRead(read({ disgusted: 0.5 }), day), 'over');
 
-console.log('\nthe raw-score trap this scoring exists to avoid:');
-// happy 0.88 vs angry 0.34 — on RAW peaks the smile wins. But 0.34 against a
-// 0.3 threshold is a better angry face than 0.88 against 0.85 is a laugh, and
-// the angry one landed faster.
-ok('strong-for-its-channel angry beats a bigger raw smile',
-  moodFromExercises([A('smile', 0.88, 5200), A('angry', 0.34, 1200), A('sad', 0.05, null), A('laugh', 0.88, 6000)], none, day),
-  'fired');
+console.log('\nthe happy split:');
+ok('0.79 is still warm', moodFromRead(read({ happy: 0.79 }), day), 'warm');
+ok('0.80 is bright', moodFromRead(read({ happy: 0.8 }), day), 'bright');
 
-console.log('\nsmile and laugh share the happy channel:');
-// Someone who properly laughs also sails through the smile round. The laugh is
-// the stronger claim, so the smile result must not compete with it.
-ok('a real laugh is not downgraded to warm',
-  moodFromExercises([A('smile', 0.95, 400), A('angry', 0.05, null), A('sad', 0.05, null), A('laugh', 0.95, 600)], none, day),
-  'bright');
+console.log('\nneutral must never win (this was the original bug):');
+// A resting face is overwhelmingly neutral. If neutral competed, it would win
+// every single time and every visitor would be told the same thing.
+ok('huge neutral does not suppress a real smile',
+  moodFromRead(read({ neutral: 0.96, happy: 0.9 }), day), 'bright');
+ok('huge neutral does not suppress a real angry face',
+  moodFromRead(read({ neutral: 0.93, angry: 0.4 }), day), 'fired');
 
-console.log('\nnear misses:');
-ok('strained angry that never crossed still beats steady',
-  moodFromExercises([A('smile', 0.1, null), A('angry', 0.26, null), A('sad', 0.03, null), A('laugh', 0.1, null)], none, day),
-  'fired');
-ok('a slow but real hit beats a near miss',
-  moodFromExercises([A('smile', 0.52, 7600), A('angry', 0.29, null), A('sad', 0.03, null), A('laugh', 0.1, null)], none, day),
-  'warm');
+console.log('\nthe noise floor:');
+// A resting face idles with sad around 0.1 and it is frequently the largest
+// non-neutral channel. Without a floor, standing still reads as "Carrying
+// something", which is both wrong and unkind.
+ok('resting face with sad 0.12 → steady, not heavy',
+  moodFromRead(read({ neutral: 0.85, sad: 0.12, happy: 0.03 }), day), 'steady');
+ok('the same face in the evening → drifting',
+  moodFromRead(read({ neutral: 0.85, sad: 0.12, happy: 0.03 }), 'evening'), 'drifting');
+ok('completely blank → steady', moodFromRead(read({ neutral: 1 }), day), 'steady');
+ok('just over the floor still counts',
+  moodFromRead(read({ neutral: 0.7, sad: 0.26 }), day), 'heavy');
 
-console.log('\nnobody performed:');
-ok('nothing landed, daytime → steady',
-  moodFromExercises([A('smile', 0.1, null), A('angry', 0.02, null), A('sad', 0.03, null), A('laugh', 0.05, null)], none, day),
-  'steady');
-ok('nothing landed, evening → drifting',
-  moodFromExercises([A('smile', 0.1, null), A('angry', 0.02, null), A('sad', 0.03, null), A('laugh', 0.05, null)], none, 'evening'),
-  'drifting');
+console.log('\nclosest channel wins, not the loudest-sounding one:');
+ok('angry 0.4 beats sad 0.3', moodFromRead(read({ angry: 0.4, sad: 0.3 }), day), 'fired');
+ok('sad 0.5 beats angry 0.35', moodFromRead(read({ angry: 0.35, sad: 0.5 }), day), 'heavy');
 
-console.log('\nside channels must not bury a performed face:');
-// THE REGRESSION: pulling an angry or laughing face raises the brows and opens
-// the mouth, which reads as `surprised`. When this ran first, every visitor
-// came out "Wide awake" no matter what they actually did.
-ok('a landed smile beats a surprised spike',
-  moodFromExercises(
-    [A('smile', 0.9, 300), A('angry', 0.05, null), A('sad', 0.05, null), A('laugh', 0.2, null)],
-    { ...none, surprised: 0.85 }, day),
-  'warm');
-ok('a landed angry beats a surprised spike',
-  moodFromExercises(
-    [A('smile', 0.1, null), A('angry', 0.5, 900), A('sad', 0.05, null), A('laugh', 0.05, null)],
-    { ...none, surprised: 0.9 }, day),
-  'fired');
+// ── the game's scoring, which no longer touches the mood ───────────────────
 
-console.log('\nside channels still decide when nothing landed:');
-ok('nothing performed + very startled → sparked',
-  moodFromExercises(
-    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
-    { ...none, surprised: 0.8 }, day),
-  'sparked');
-ok('nothing performed + fearful → wound',
-  moodFromExercises(
-    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
-    { ...none, fearful: 0.7 }, day),
-  'wound');
-ok('nothing performed + disgusted → over',
-  moodFromExercises(
-    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
-    { ...none, disgusted: 0.7 }, day),
-  'over');
+const A = (id: string, peak: number, timeToHit: number | null) => ({ exerciseId: id, peak, timeToHit });
+const ex = (id: string) => EXERCISES.find((e) => e.id === id)!;
 
-console.log('\nease is comparable across channels (that is the whole point):');
+console.log('\ngame scoring is comparable across channels:');
 for (const e of EXERCISES) {
-  const atThreshold = easeOf(A(e.id, e.threshold, 1000), e);
-  console.log(`  ${e.id.padEnd(6)} peak=${e.threshold} hit@1s → ease ${atThreshold.toFixed(2)}`);
+  console.log(`  ${e.id.padEnd(6)} hit its ${e.threshold} bar at 1s → ${scoreOf(A(e.id, e.threshold, 1000), e)}`);
 }
+const scores = EXERCISES.map((e) => scoreOf(A(e.id, e.threshold, 1000), e));
+ok('all four score the same for an equivalent effort', new Set(scores).size, 1);
 
-console.log(process.exitCode ? '\nFAILURES' : '\nall scoring assertions passed');
+console.log('\ngame scoring rewards speed and conviction:');
+ok('instant beats slow', scoreOf(A('smile', 0.9, 300), ex('smile')) > scoreOf(A('smile', 0.9, 6000), ex('smile')), true);
+ok('a miss scores below any hit', scoreOf(A('angry', 0.29, null), ex('angry')) < scoreOf(A('angry', 0.3, 7900), ex('angry')), true);
+ok('score is capped at 100', scoreOf(A('smile', 1, 0), ex('smile')) <= 100, true);
+ok('over-performing an easy round does not exceed the cap',
+  scoreOf(A('smile', 1, 0), ex('smile')), scoreOf(A('laugh', 1, 0), ex('laugh')));
+
+console.log(process.exitCode ? '\nFAILURES' : '\nall assertions passed');

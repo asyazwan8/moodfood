@@ -1,11 +1,11 @@
 import { Logo } from '../brand/Logo';
-import { PhotoStrip } from '../ui/PhotoStrip';
+import { Polaroid } from '../ui/Polaroid';
 import { PressCue } from '../ui/PressCue';
 import { MOOD_INTRO } from '../story/script';
 import { MOODS, type MoodId } from '../mood/moods';
 
 /** The reveal: the photo, the word, and one line saying what we think we saw. */
-export function MoodReveal({ mood, shots }: { mood: MoodId; shots: (string | null)[] }) {
+export function MoodReveal({ mood, photo }: { mood: MoodId; photo: string | null }) {
   const m = MOODS[mood];
 
   return (
@@ -17,7 +17,7 @@ export function MoodReveal({ mood, shots }: { mood: MoodId; shots: (string | nul
           {MOOD_INTRO}
         </p>
 
-        <PhotoStrip shots={shots} width={500} />
+        <Polaroid src={photo} width={460} tilt={-3} />
 
         <h1
           className="mood-word"

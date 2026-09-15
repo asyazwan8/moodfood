@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { detect, loadFaceApi, type FaceBox } from './faceApi';
-import { EMPTY_EXPRESSIONS, type Exercise, type Expressions } from '../mood/classify';
+import { EMPTY_EXPRESSIONS, READ_CHANNELS, type Exercise, type Expressions } from '../mood/classify';
 
 export type CameraState = 'off' | 'requesting' | 'live' | 'denied' | 'error';
 
@@ -38,6 +38,18 @@ const INITIAL: VisionState = {
 const TICK_MS = 80;
 
 /**
+ * Which channel a ?mock=1 read pretends to see. `?show=angry` overrides it, so
+ * every mood can be walked through without a face.
+ */
+const mockReadChannel = ((): keyof Expressions => {
+  const asked = new URLSearchParams(window.location.search).get('show');
+  const allowed = ['happy', 'sad', 'angry', 'surprised', 'fearful', 'disgusted'] as const;
+  return (allowed as readonly string[]).includes(asked ?? '')
+    ? (asked as keyof Expressions)
+    : 'happy';
+})();
+
+/**
  * Owns the camera, the detection loop, the exercise rounds and the photos.
  *
  * PRIVACY: frames never leave this hook. Nothing is uploaded, nothing is
@@ -61,14 +73,17 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
   >(null);
 
   /**
-   * Highest each channel reached across the WHOLE session, not just its own
-   * round. This is how the secondary moods stay reachable — someone visibly
-   * startled throughout is saying something the four rounds never ask about.
+   * The open read. Unlike a game round this watches every channel at once,
+   * because the visitor chooses what to show rather than being given a target.
    */
+  const readRef = useRef<{ peaks: Expressions; photo: string | null; best: number } | null>(null);
+
+  /** Highest each channel reached across the whole session. Debug only. */
   const peaksRef = useRef<Expressions>({ ...EMPTY_EXPRESSIONS });
 
   const [state, setState] = useState<VisionState>(INITIAL);
   const mockStartRef = useRef(0);
+  const mockReadStartRef = useRef(0);
 
   const stop = useCallback(() => {
     runningRef.current = false;
@@ -81,6 +96,7 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
     const video = videoRef.current;
     if (video) video.srcObject = null;
     roundRef.current = null;
+    readRef.current = null;
     peaksRef.current = { ...EMPTY_EXPRESSIONS };
     setState(INITIAL);
   }, []);
@@ -186,7 +202,14 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
     // every one of them. Ramps over ~1.6s from the round starting.
     const round = roundRef.current;
     const expressions: Expressions = { ...EMPTY_EXPRESSIONS, neutral: 0.7 };
-    if (faceFound && round) {
+    if (faceFound && readRef.current) {
+      // Ramp one channel so a mock walkthrough produces a performed mood
+      // rather than falling through to Steady.
+      const since = (now - mockReadStartRef.current) / 1000;
+      const ramp = Math.min(1, Math.max(0, since / 1.8));
+      expressions[mockReadChannel] = ramp * 0.9;
+      expressions.neutral = 0.7 * (1 - ramp);
+    } else if (faceFound && round) {
       const since = (now - round.startedAt) / 1000;
       const ramp = Math.min(1, Math.max(0, since / 1.6));
       expressions[round.exercise.channel] = ramp * (round.exercise.threshold + 0.18);
@@ -218,6 +241,21 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
         if (expressions[key] > peaks[key]) peaks[key] = expressions[key];
       }
 
+      // The open read: keep every channel's peak, and photograph whenever the
+      // strongest thing we have seen so far gets stronger.
+      const active = readRef.current;
+      if (active) {
+        for (const channel of READ_CHANNELS) {
+          if (expressions[channel] > active.peaks[channel]) active.peaks[channel] = expressions[channel];
+        }
+        const strongest = Math.max(...READ_CHANNELS.map((c) => expressions[c]));
+        if (strongest > active.best) {
+          active.best = strongest;
+          const shot = mock ? mockPhoto() : video ? framePhoto(video, box) : null;
+          if (shot) active.photo = shot;
+        }
+      }
+
       const round = roundRef.current;
       if (!round) return;
 
@@ -243,7 +281,22 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
 
   // ── the bits the story drives ────────────────────────────────────────────
 
-  /** Open a round. Everything recorded from here is scored against it. */
+  /** Open the read. Every channel is watched; the visitor picks what to show. */
+  const beginRead = useCallback(() => {
+    readRef.current = { peaks: { ...EMPTY_EXPRESSIONS }, photo: null, best: 0 };
+    mockReadStartRef.current = performance.now();
+  }, []);
+
+  /** Close the read and hand back the peaks and the photo. */
+  const endRead = useCallback((): { peaks: Expressions; photo: string | null } => {
+    const active = readRef.current;
+    readRef.current = null;
+    return active
+      ? { peaks: active.peaks, photo: active.photo }
+      : { peaks: { ...EMPTY_EXPRESSIONS }, photo: null };
+  }, []);
+
+  /** Open a game round. Everything recorded from here is scored against it. */
   const beginRound = useCallback((exercise: Exercise) => {
     roundRef.current = {
       exercise,
@@ -271,7 +324,7 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
   /** Session-wide channel peaks, for the secondary moods. */
   const sessionPeaks = useCallback(() => ({ ...peaksRef.current }), []);
 
-  return { videoRef, state, start, stop, beginRound, endRound, sessionPeaks };
+  return { videoRef, state, start, stop, beginRead, endRead, beginRound, endRound, sessionPeaks };
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────

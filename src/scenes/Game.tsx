@@ -1,25 +1,27 @@
 import { Logo } from '../brand/Logo';
 import { SmileMeter } from '../ui/SmileMeter';
 import { EXERCISES as EXERCISE_DEFS } from '../mood/classify';
-import { EXERCISES, EXERCISE_COPY, reactionLine } from '../story/script';
+import { GAME, GAME_COPY, reactionLine } from '../story/script';
 
 /**
- * The four face exercises.
+ * The four-face game.
  *
- * This is the heart of the kiosk now. It replaced a passive read taken while
- * the visitor stood still, which returned "Steady" for nearly everybody — a
- * resting face at a kiosk is just neutral.
+ * Purely entertainment: the mood was already decided by the open read and
+ * announced two screens ago, and nothing here can change it. That separation
+ * is the point — the game gets to be a game, and the read gets to be about how
+ * someone actually feels rather than which face they can pull fastest.
  *
- * The scene itself is presentational; App drives the round timing, so all the
- * timers stay in one place with the rest of the story's pacing.
+ * The scene is presentational; App drives the round timing, so all the timers
+ * stay in one place with the rest of the story's pacing.
  */
-export function Exercises({
+export function Game({
   index,
   value,
   progress,
   hit,
   escaped,
   flashing,
+  total,
   seed,
 }: {
   /** Which round, 0-based. */
@@ -33,15 +35,17 @@ export function Exercises({
   /** True when the round ran out of time and we are moving on anyway. */
   escaped: boolean;
   flashing: boolean;
+  /** Running score so far, out of 400. */
+  total: number;
   seed: number;
 }) {
   const exercise = EXERCISE_DEFS[index];
   if (!exercise) return null;
-  const copy = EXERCISE_COPY[exercise.id];
+  const copy = GAME_COPY[exercise.id];
 
   let line: string;
-  if (escaped) line = pick(EXERCISES.escape, seed + index);
-  else if (hit) line = pick(EXERCISES.got, seed + index);
+  if (escaped) line = pick(GAME.escape, seed + index);
+  else if (hit) line = pick(GAME.got, seed + index);
   else line = reactionLine(exercise.id, progress);
 
   return (
@@ -62,17 +66,21 @@ export function Exercises({
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 110 }}>
-        <span
+        <div
           style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: 22,
             fontSize: 30,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             color: 'var(--ink-faint)',
-            marginBottom: 22,
           }}
         >
-          {EXERCISES.counter(index + 1, EXERCISE_DEFS.length)}
-        </span>
+          <span>{GAME.counter(index + 1, EXERCISE_DEFS.length)}</span>
+          <span style={{ color: 'var(--magenta)' }}>{total}</span>
+        </div>
 
         <h2
           style={{

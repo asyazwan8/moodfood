@@ -49,8 +49,11 @@ export const EXERCISES: Exercise[] = [
   { id: 'laugh', channel: 'happy', threshold: 0.85, mood: 'bright' },
 ];
 
-/** How long a round runs before the kiosk says "close enough" and moves on. */
+/** How long a game round runs before the kiosk says "close enough". */
 export const ROUND_TIMEOUT_MS = 8000;
+
+/** How long the open read watches before taking whatever it has. */
+export const READ_WINDOW_MS = 5000;
 
 export type Attempt = {
   exerciseId: string;
@@ -70,111 +73,105 @@ export function daypartFor(date = new Date()): Daypart {
   return 'latenight';
 }
 
-/** Did the round actually reach its threshold? */
-export function wasHit(attempt: Attempt): boolean {
-  return attempt.timeToHit !== null;
-}
-
 /**
- * How readily a face arrived. 1.0 means "hit the threshold instantly".
- *
- * Two things here are load-bearing:
+ * How readily a face arrived during the GAME. 1.0 means "hit the threshold
+ * instantly". This is the game's score — it no longer decides the mood.
  *
  * Scored RELATIVE TO THE ROUND'S OWN THRESHOLD, because the raw numbers are
  * not comparable: `happy` routinely peaks near 1.0 while `angry` struggles
- * past 0.4. Comparing raw peaks would hand the win to the smile round every
- * time, and the kiosk would be back to giving everyone the same answer.
- *
- * And strength is CAPPED AT 1.0 — clearing the bar is clearing it, and
- * clearing it by more earns nothing. Without the cap the easiest round wins
- * automatically: a proper laugh registers about 0.95 happy, which is 1.9x the
- * smile threshold but only 1.1x the laugh threshold, so the person would be
- * told they were merely "Warm" for laughing their head off.
+ * past 0.4. And strength is CAPPED AT 1.0 — clearing the bar is clearing it,
+ * so a huge laugh does not score more on the easy smile round than on the
+ * hard laugh round.
  */
 export function easeOf(attempt: Attempt, exercise: Exercise): number {
   const strength = Math.min(attempt.peak / exercise.threshold, 1);
-  if (!wasHit(attempt)) return strength * 0.25;
-  const speed = clamp(1 - (attempt.timeToHit ?? 0) / ROUND_TIMEOUT_MS, 0.15, 1);
+
+  // A miss can never score more than MISS_CEILING, and a hit can never score
+  // less than SLOWEST_HIT. Those two bands must not overlap, or a near miss
+  // outscores a slow but genuine hit — which it did, 24 to 15, until the
+  // floor was raised. In a game, reaching the target always wins.
+  if (attempt.timeToHit === null) return strength * MISS_CEILING;
+
+  // A hit means peak >= threshold, so strength is exactly 1 here.
+  const speed = clamp(1 - attempt.timeToHit / ROUND_TIMEOUT_MS, SLOWEST_HIT, 1);
   return strength * speed;
 }
 
-/**
- * Drops rounds that a harder round on the same channel has already beaten.
- *
- * Smile and laugh are both `happy`, just at different thresholds. If someone
- * reached the laugh threshold then they necessarily sailed through the smile
- * one, and the laugh is the stronger claim about them — so the smile result
- * carries no information and must not compete.
- */
-function dropSuperseded(attempts: Attempt[]): Attempt[] {
-  return attempts.filter((attempt) => {
-    const mine = EXERCISES.find((e) => e.id === attempt.exerciseId);
-    if (!mine) return false;
-    return !attempts.some((other) => {
-      const theirs = EXERCISES.find((e) => e.id === other.exerciseId);
-      return (
-        theirs &&
-        theirs.channel === mine.channel &&
-        theirs.threshold > mine.threshold &&
-        wasHit(other)
-      );
-    });
-  });
+/** The most a round can score without ever reaching its threshold. */
+const MISS_CEILING = 0.25;
+/** The least a round can score having reached it. Must exceed MISS_CEILING. */
+const SLOWEST_HIT = 0.3;
+
+/** The game's per-round score, 0-100. */
+export function scoreOf(attempt: Attempt, exercise: Exercise): number {
+  return Math.round(Math.min(easeOf(attempt, exercise), 1) * 100);
 }
 
-/** A miss this close counts — face-api is strict, the visitor clearly tried. */
-const NEAR_MISS = 0.7;
+/** The six channels the read considers. `neutral` is deliberately absent. */
+export const READ_CHANNELS = [
+  'happy',
+  'sad',
+  'angry',
+  'surprised',
+  'fearful',
+  'disgusted',
+] as const satisfies readonly Channel[];
 
 /**
- * Decides the mood from the four rounds.
+ * Below this, the strongest channel is noise rather than an expression.
  *
- * The primary read is "which face came easiest" — the one that was already
- * loaded and ready. Before that, three secondary signals get a look in, since
- * they are strong enough to mean something on their own and they keep the
- * moods the rounds cannot reach from going dead.
+ * It matters more than it looks: a resting face idles with `sad` around 0.1
+ * and it is frequently the largest non-neutral channel, so without a floor the
+ * kiosk would tell people standing perfectly still that they are Carrying
+ * something.
  */
-export function moodFromExercises(
-  attempts: Attempt[],
-  peaks: Expressions,
-  daypart: Daypart = daypartFor(),
-): MoodId {
-  const live = dropSuperseded(attempts);
-  const scored = live.flatMap((attempt) => {
-    const exercise = EXERCISES.find((e) => e.id === attempt.exerciseId);
-    return exercise ? [{ attempt, exercise, ease: easeOf(attempt, exercise) }] : [];
-  });
+const READ_FLOOR = 0.25;
 
-  // A round that was actually reached always beats one that was not, however
-  // close the near miss came.
-  const hits = scored.filter((entry) => wasHit(entry.attempt));
-  if (hits.length > 0) {
-    return hits.reduce((a, b) => (b.ease > a.ease ? b : a)).exercise.mood;
+/** A smile this big is not a smile any more. */
+const BEAMING = 0.8;
+
+/**
+ * The mood, from the one open read.
+ *
+ * The visitor is asked to show how they feel and picks the expression
+ * themselves, so this is a straight argmax over the six real emotions — no
+ * cross-channel comparison problem, because nothing is competing against a
+ * different question.
+ *
+ * `neutral` is excluded on purpose. It dominates every resting face, and
+ * letting it compete is exactly what made an earlier version answer "Steady"
+ * to virtually everybody.
+ */
+export function moodFromRead(peaks: Expressions, daypart: Daypart = daypartFor()): MoodId {
+  let best: Channel = 'happy';
+  let top = -1;
+  for (const channel of READ_CHANNELS) {
+    if (peaks[channel] > top) {
+      top = peaks[channel];
+      best = channel;
+    }
   }
 
-  // Nothing was reached. If one came genuinely close, take it — face-api is
-  // strict about angry and sad, and someone straining to look furious should
-  // not be told they are Steady.
-  const near = scored
-    .filter((entry) => entry.attempt.peak / entry.exercise.threshold >= NEAR_MISS)
-    .sort((a, b) => b.ease - a.ease)[0];
-  if (near) return near.exercise.mood;
+  // Showed us nothing. Not a failure — a face that gives nothing away is its
+  // own kind of read, and late in the day it means something different.
+  if (top < READ_FLOOR) return tired(daypart) ? 'drifting' : 'steady';
 
-  // Only now do the side channels get a say.
-  //
-  // These used to run FIRST and buried everything else: pulling an angry or a
-  // laughing face raises the eyebrows and opens the mouth, which face-api
-  // reads as `surprised`, so virtually every visitor came out "Wide awake"
-  // regardless of what they actually performed. A face the visitor deliberately
-  // pulled always outranks a side effect of pulling it, so these are a
-  // fallback for when nothing landed — and the bars are high, because these
-  // channels co-fire so readily during the rounds.
-  if (peaks.surprised > 0.7) return 'sparked';
-  if (peaks.fearful > 0.6) return 'wound';
-  if (peaks.disgusted > 0.6) return 'over';
-
-  // A face that gives nothing away is its own kind of read, and late in the
-  // day it means something different.
-  return tired(daypart) ? 'drifting' : 'steady';
+  switch (best) {
+    case 'happy':
+      return top >= BEAMING ? 'bright' : 'warm';
+    case 'sad':
+      return 'heavy';
+    case 'angry':
+      return 'fired';
+    case 'surprised':
+      return 'sparked';
+    case 'fearful':
+      return 'wound';
+    case 'disgusted':
+      return 'over';
+    default:
+      return tired(daypart) ? 'drifting' : 'steady';
+  }
 }
 
 /** Late in the day, a face with nothing in it reads as spent, not composed. */

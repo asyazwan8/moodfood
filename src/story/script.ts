@@ -82,23 +82,41 @@ export const WARMUP = {
   holding: 'Stay there. Just be normal for a second.',
 };
 
-// ── 4. the face exercises ──────────────────────────────────────────────────
+// ── 4. the read — the only thing that sets the mood ────────────────────────
 
 /**
- * Four rounds. The visitor performs each expression and the kiosk confirms it.
+ * One open prompt. No target expression: the visitor chooses what to show,
+ * which is the whole reason this reads as "how I feel" rather than "a face I
+ * can pull".
  *
- * This replaced a passive read taken while the visitor stood still — which
- * returned "Steady" for almost everybody, because a resting face at a kiosk is
- * just neutral. Making them perform is both more reliable and the most fun
- * part of the whole thing.
- *
- * `escape` is used when a round runs out of time. It must never read as
- * failure: face-api is genuinely poor at angry and sad, so plenty of people
- * will not trigger them however hard they try, and being told they failed at
- * having a feeling is a miserable note to hit in a shopping mall.
+ * `nudge` lines run while nothing much is registering. They must stay
+ * permissive — the answer "nothing in particular" is a real answer and gets
+ * its own mood, so nobody should feel they are being made to perform.
  */
-export const EXERCISES = {
-  intro: 'Four faces. Give me your best.',
+export const READ = {
+  prompt: 'Show me how you are feeling right now.',
+  sub: 'Any face. Whatever is true.',
+  nudge: [
+    'Whenever you are ready.',
+    'No wrong answer here.',
+    'Even nothing much is an answer.',
+  ],
+  seeing: ['Mm. I see it.', 'Okay — got that.', 'Yes. Holding that.'],
+};
+
+// ── 5. the game ────────────────────────────────────────────────────────────
+
+/**
+ * Four faces, scored. Pure entertainment — nothing here changes the mood,
+ * which was already decided and announced.
+ *
+ * `escape` runs when a round times out. It must never read as failure:
+ * face-api is genuinely poor at angry and sad, so plenty of people will not
+ * trigger them however hard they try, and being told they failed at pulling a
+ * face is a miserable note to hit in a shopping mall.
+ */
+export const GAME = {
+  intro: 'Right. Now a game.',
   counter: (n: number, total: number) => `${n} of ${total}`,
   escape: [
     'Close enough lah. Next.',
@@ -106,6 +124,22 @@ export const EXERCISES = {
     'Good enough for me. Keep going.',
   ],
   got: ['Got it.', 'There it is.', 'Yes — that one.', 'Perfect.'],
+};
+
+// ── 6. the score ───────────────────────────────────────────────────────────
+
+/** Bands are checked top down against the total out of 400. */
+export const SCORE = {
+  title: 'Not bad at all.',
+  bands: [
+    { above: 340, line: 'That is a suspiciously good set of faces.' },
+    { above: 240, line: 'Solid work. You have done this before.' },
+    { above: 140, line: 'We got there in the end.' },
+    { above: 0, line: 'Look, the camera is not always fair.' },
+  ],
+  /** Filled with the name of the round they scored highest on. */
+  best: (face: string) => `Your ${face} is frighteningly good.`,
+  total: (n: number) => `${n} / 400`,
 };
 
 export type ExercisePrompt = {
@@ -116,7 +150,7 @@ export type ExercisePrompt = {
 };
 
 /** Keyed by exercise id — see src/mood/classify.ts for the channels. */
-export const EXERCISE_COPY: Record<string, ExercisePrompt> = {
+export const GAME_COPY: Record<string, ExercisePrompt> = {
   smile: {
     prompt: 'Start easy. Give me a smile.',
     tiers: [
@@ -205,7 +239,15 @@ export const ENCOURAGEMENT: Record<MoodId, string[][]> = {
 // ── 9. food ────────────────────────────────────────────────────────────────
 
 export const FOOD = {
-  intro: ['So here is what you need.', 'Right. I know exactly where to send you.', 'This one. Trust me.'],
+  /**
+   * The thank-you lives here rather than on its own screen, so the ending
+   * reads as a send-off rather than one more thing being asked of them.
+   */
+  intro: [
+    'Thank you. Now — you must be hungry.',
+    'Thanks for playing. You must be hungry.',
+    'Right. Thank you. And you must be starving.',
+  ],
   again: 'Not feeling it?',
   againCta: 'Show me another',
   exhausted: 'That is everything I have got for this mood. Go with the first one lah.',
@@ -252,7 +294,7 @@ export function newSeed(): number {
  * way to an angry face and 0.4 of the way to a smile should read the same.
  */
 export function reactionLine(exerciseId: string, progress: number): string {
-  const copy = EXERCISE_COPY[exerciseId];
+  const copy = GAME_COPY[exerciseId];
   if (!copy) return '';
   for (const tier of copy.tiers) {
     if (progress > tier.above) return tier.line;
