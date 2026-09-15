@@ -97,11 +97,15 @@ time (~600 KB), the service worker precaches them, and the app loads them from i
 origin. Fonts come from `@fontsource-variable/*` for the same reason, and the closing QR
 code is generated locally.
 
-### Two iOS Safari workarounds
+### Three iOS Safari workarounds
 
-Both found on a real phone, neither reproducible in headless Chromium, both in
+All found on a real phone, none reproducible in headless Chromium by default, all in
 `src/scenes/CameraView.tsx`:
 
+- **The video is sized in explicit pixels**, not `width/height: 100%`. Percentage heights do
+  not reliably resolve against a grid item on iOS, so the video fell back to its intrinsic
+  aspect ratio — and an iPhone front camera hands back a **portrait 9:16 stream**, which
+  turned a 560px circle into a 560×996 ellipse overflowing its own container.
 - **The camera's rounding is on the `<video>` itself**, not a parent with `overflow: hidden`.
   The video carries `transform: scaleX(-1)` to mirror it, which gives it its own compositing
   layer, and iOS then ignores the parent's rounded clip — it rendered as a hard square
