@@ -1,5 +1,4 @@
 import type { MutableRefObject } from 'react';
-import { DalaMark } from '../brand/Logo';
 
 /**
  * The live camera feed, masked into a slowly morphing blob.
@@ -52,10 +51,16 @@ export function CameraView({
         {/* Sits under the video. Visible only while there is no stream —
             during ?mock=1 walkthroughs, or the moment before the camera
             wakes — so the blob is never just a hole in the screen. */}
-        <DalaMark
-          size={diameter * 0.3}
+        <div
+          aria-hidden
           className="thinking"
-          style={{ position: 'absolute', color: 'rgba(255,244,230,.12)' }}
+          style={{
+            position: 'absolute',
+            width: diameter * 0.34,
+            height: diameter * 0.34,
+            borderRadius: '50%',
+            border: '3px solid rgba(255,244,230,.14)',
+          }}
         />
         <video
           ref={videoRef}

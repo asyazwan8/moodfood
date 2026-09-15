@@ -103,7 +103,7 @@ Everything IPC-specific is deliberately quarantined, because the brand assets he
 | To change | Edit |
 |---|---|
 | Brand colours | `src/brand/tokens.ts` and the matching vars in `src/brand/brand.css` |
-| The Dala horse mark | Replace `public/brand/dala.svg` — it is used via CSS mask, so it recolours itself |
+| The logo | Replace `public/brand/logo.svg` — every place the logo appears renders that one file |
 | The typeface | Add `@font-face` in `src/brand/brand.css`, point `--font-display` / `--font-body` at it |
 | **Every word the kiosk says** | `src/story/script.ts` — all of it, one file |
 | Mood words and palettes | `src/mood/moods.ts` |

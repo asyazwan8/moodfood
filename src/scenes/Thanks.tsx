@@ -1,4 +1,4 @@
-import { Logo, DalaMark } from '../brand/Logo';
+import { Logo } from '../brand/Logo';
 import { QrCode } from '../ui/QrCode';
 import { THANKS } from '../story/script';
 
@@ -11,8 +11,6 @@ export function Thanks() {
       <Logo size={64} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 46 }}>
-        <DalaMark className="dala-drift" size={140} style={{ color: 'var(--amber)' }} />
-
         <h2
           style={{
             margin: 0,

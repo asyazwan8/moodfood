@@ -1,4 +1,4 @@
-import { DalaMark } from '../brand/Logo';
+import { ThinkingMark } from '../brand/Logo';
 import { READING, pickFrom } from '../story/script';
 
 /**
@@ -23,7 +23,7 @@ export function Reading({ seed }: { seed: number }) {
           gap: 70,
         }}
       >
-        <DalaMark className="thinking" size={190} style={{ color: 'var(--cream)' }} />
+        <ThinkingMark size={200} />
         <p
           style={{
             margin: 0,

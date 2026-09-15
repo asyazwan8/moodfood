@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Logo, DalaMark } from '../brand/Logo';
+import { Logo } from '../brand/Logo';
 import { PressCue } from '../ui/PressCue';
 import { ATTRACT, GREETINGS, IDLE_CUE, pickFrom } from '../story/script';
 import type { Daypart } from '../mood/classify';
@@ -23,11 +23,6 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
       <Logo size={64} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 40 }}>
-        <DalaMark
-          size={150}
-          className="dala-drift"
-          style={{ color: 'var(--amber)', marginBottom: 20, opacity: 0.95 }}
-        />
 
         <h1
           style={{

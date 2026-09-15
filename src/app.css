@@ -55,12 +55,12 @@
   }
 }
 
-/* The Dala horse drifting across the idle screen. */
-.dala-drift {
-  animation: dala-drift 9s ease-in-out infinite;
+/* Slow vertical drift, for anything that should feel weightless. */
+.drift {
+  animation: drift 9s ease-in-out infinite;
 }
 
-@keyframes dala-drift {
+@keyframes drift {
   0%,
   100% {
     transform: translateY(0) rotate(-2deg);

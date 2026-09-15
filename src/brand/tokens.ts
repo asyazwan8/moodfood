@@ -3,14 +3,13 @@
  * THE BRAND FILE. This is the one place IPC's identity is defined.
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * These values are a STAND-IN. They were chosen to sit close to IPC Shopping
- * Centre's world — the Dala horse's traditional red body, the blue/amber/green
- * of kurbits folk painting — but they are NOT sampled from IPC's brand guide,
+ * These values are a STAND-IN. They are NOT sampled from IPC's brand guide,
  * which was not reachable when this was built.
  *
  * TO MAKE THIS OFFICIAL:
- *   1. Replace the hex values in `palette` below with IPC's real brand colours.
- *   2. Drop the real mark into `public/brand/dala.svg` (same viewBox ratio).
+ *   1. Replace `public/brand/logo.svg` with IPC's real logo.
+ *   2. Replace the hex values in `palette` below with IPC's real brand colours
+ *      (sampling them straight out of the logo artwork is the quickest way).
  *   3. Point `fonts.display` / `fonts.body` at IPC's real typeface — see
  *      src/brand/brand.css for where the @font-face goes.
  * Nothing else in the app needs to be touched.
@@ -21,15 +20,15 @@ export const palette = {
   ink: '#140A1E',
   inkSoft: '#241236',
 
-  /** Dala red — the primary. */
+  /** The primary red. */
   red: '#E4322B',
-  /** Warm amber, the kurbits highlight. */
+  /** Warm amber highlight. */
   amber: '#FFB03B',
-  /** Folk-painting rose. */
+  /** Rose. */
   rose: '#E8467F',
-  /** Kurbits blue-green. */
+  /** Blue-green. */
   teal: '#17A79C',
-  /** Kurbits blue. */
+  /** Blue. */
   blue: '#3D6BE5',
   /** Soft violet for the cooler moods. */
   violet: '#8B5CF6',

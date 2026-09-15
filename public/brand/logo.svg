@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 235 110" role="img" aria-label="IPC">
+  <!--
+    PLACEHOLDER — a plain IPC wordmark, drawn as paths so it does not depend on
+    a font being installed.
+
+    THIS IS THE ONE FILE TO REPLACE with IPC's real logo. Everything in the app
+    renders this file, so dropping the official artwork in here updates the
+    kiosk everywhere at once. Keep it light-on-transparent: it sits on a
+    near-black ground.
+  -->
+  <g fill="none" stroke="#FFF4E6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 24 V86" />
+    <path d="M66 86 V24 H94 A21 21 0 0 1 94 66 H66" />
+    <path d="M211.4 31.2 A32 32 0 1 0 211.4 78.8" />
+  </g>
+</svg>

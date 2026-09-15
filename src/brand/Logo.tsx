@@ -1,84 +1,40 @@
 import type { CSSProperties } from 'react';
 
 /**
- * The IPC lockup: the Dala horse mark plus the wordmark.
+ * The IPC logo.
  *
- * The horse is drawn as a CSS mask over `public/brand/dala.svg`, so it takes
- * `color` from its parent and so that replacing that one file with IPC's real
- * artwork swaps the mark everywhere at once. The wordmark is live text in
- * --font-display, so it picks up IPC's real typeface the moment that font is
- * installed in brand.css.
+ * Renders `public/brand/logo.svg` directly, so replacing that one file swaps
+ * the logo everywhere in the kiosk at once — no component changes, no rebuild
+ * of anything else. That file is currently a plain wordmark placeholder.
  */
-export function Logo({
-  size = 56,
-  showWordmark = true,
-  style,
-}: {
-  size?: number;
-  showWordmark?: boolean;
-  style?: CSSProperties;
-}) {
+export function Logo({ size = 56, style }: { size?: number; style?: CSSProperties }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: size * 0.28,
-        color: 'var(--red)',
-        ...style,
-      }}
-    >
-      <DalaMark size={size} />
-      {showWordmark && (
-        <span
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: size * 0.92,
-            letterSpacing: '-0.03em',
-            color: 'var(--cream)',
-            lineHeight: 1,
-          }}
-        >
-          IPC
-        </span>
-      )}
-    </div>
+    <img
+      src="/brand/logo.svg"
+      alt="IPC"
+      // alignSelf stops a flex column from stretching the image; pass
+      // alignSelf in `style` to override it where the logo should be centred.
+      style={{ height: size, width: 'auto', display: 'block', flex: 'none', alignSelf: 'flex-start', ...style }}
+    />
   );
 }
 
-/** The horse on its own — used in the idle drift and the loading state. */
-export function DalaMark({
-  size = 56,
-  style,
-  className,
-}: {
-  size?: number;
-  style?: CSSProperties;
-  className?: string;
-}) {
-  const mask = {
-    WebkitMaskImage: 'url(/brand/dala.svg)',
-    maskImage: 'url(/brand/dala.svg)',
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskSize: 'contain',
-    maskSize: 'contain',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
-  } as CSSProperties;
-
+/**
+ * The "thinking" mark used while the kiosk is reading you.
+ *
+ * Deliberately abstract rather than the logo: it is a soft blob that breathes
+ * in the same visual language as the lava lamp behind it. A pulsing logo would
+ * read as a loading spinner with branding bolted on.
+ */
+export function ThinkingMark({ size = 180, style }: { size?: number; style?: CSSProperties }) {
   return (
     <div
-      role="img"
-      aria-label="IPC Dala horse"
-      className={className}
+      aria-hidden
+      className="blob thinking"
       style={{
-        width: size * (240 / 200),
+        width: size,
         height: size,
-        background: 'currentColor',
-        flex: 'none',
-        ...mask,
+        background: 'radial-gradient(circle at 38% 34%, var(--cream), var(--amber) 62%, transparent 76%)',
         ...style,
       }}
     />
