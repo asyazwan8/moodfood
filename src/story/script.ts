@@ -30,7 +30,7 @@ export const GREETINGS: Record<Daypart, { hello: string; ask: string }[]> = {
     { hello: 'Hi. Good morning.', ask: 'How are we starting today?' },
   ],
   afternoon: [
-    { hello: 'Afternoon.', ask: 'How are you today' },
+    { hello: 'Afternoon.', ask: 'How are you today?' },
     { hello: 'Hi there.', ask: 'Have you eaten yet?' },
     { hello: 'Afternoon, you.', ask: 'How is the day treating you?' },
   ],
@@ -48,7 +48,7 @@ export const GREETINGS: Record<Daypart, { hello: string; ask: string }[]> = {
 
 /** Rotates on the idle screen while nobody is standing there. */
 export const ATTRACT = [
-  'I can read your modd. Let me see yours.',
+  'I can read your mood. Let me see yours.',
   'Tell me how you are and I will tell you what to eat.',
   'Thirty seconds. Then food.',
   'No app. No sign up. Just your face.',
