@@ -25,12 +25,12 @@ import type { MoodId } from '../mood/moods';
 
 export const GREETINGS: Record<Daypart, { hello: string; ask: string }[]> = {
   morning: [
-    { hello: 'Selamat pagi.', ask: 'How are you, really?' },
+    { hello: 'Selamat pagi.', ask: 'How are you today?' },
     { hello: 'Morning.', ask: 'You are up early. How is it going?' },
     { hello: 'Hi. Good morning.', ask: 'How are we starting today?' },
   ],
   afternoon: [
-    { hello: 'Afternoon.', ask: 'How are you, really?' },
+    { hello: 'Afternoon.', ask: 'How are you today' },
     { hello: 'Hi there.', ask: 'Have you eaten yet?' },
     { hello: 'Afternoon, you.', ask: 'How is the day treating you?' },
   ],
@@ -41,14 +41,14 @@ export const GREETINGS: Record<Daypart, { hello: string; ask: string }[]> = {
   ],
   latenight: [
     { hello: 'Still here?', ask: 'Same. How are you holding up?' },
-    { hello: 'Hi. It is late.', ask: 'How are you, really?' },
+    { hello: 'Hi. It is late.', ask: 'How are you feeling?' },
     { hello: 'Oh — hello.', ask: 'What are we still doing here?' },
   ],
 };
 
 /** Rotates on the idle screen while nobody is standing there. */
 export const ATTRACT = [
-  'I can read a face. Let me try yours.',
+  'I can read your modd. Let me see yours.',
   'Tell me how you are and I will tell you what to eat.',
   'Thirty seconds. Then food.',
   'No app. No sign up. Just your face.',
@@ -62,8 +62,8 @@ export const IDLE_CUE = 'Touch anywhere to start';
 export const CONSENT = {
   title: 'First — may I look at you?',
   body: [
-    'I need the camera for about twenty seconds to read your face.',
-    'Nothing is saved. Nothing is sent anywhere. It all happens on this screen and disappears when you walk away.',
+    'I need the camera for about twenty seconds to read your mood.',
+    'Your photo is not saved anywhere. It all happens on this screen and disappears when you walk away.',
   ],
   cta: 'Okay, go ahead',
   bail: 'Actually, not now',
