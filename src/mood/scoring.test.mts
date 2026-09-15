@@ -71,13 +71,37 @@ ok('nothing landed, evening → drifting',
   moodFromExercises([A('smile', 0.1, null), A('angry', 0.02, null), A('sad', 0.03, null), A('laugh', 0.05, null)], none, 'evening'),
   'drifting');
 
-console.log('\nsecondary signals override:');
-ok('startled throughout → sparked',
-  moodFromExercises([A('smile', 0.9, 300)], { ...none, surprised: 0.6 }, day), 'sparked');
-ok('fearful throughout → wound',
-  moodFromExercises([A('smile', 0.9, 300)], { ...none, fearful: 0.5 }, day), 'wound');
-ok('disgusted throughout → over',
-  moodFromExercises([A('smile', 0.9, 300)], { ...none, disgusted: 0.5 }, day), 'over');
+console.log('\nside channels must not bury a performed face:');
+// THE REGRESSION: pulling an angry or laughing face raises the brows and opens
+// the mouth, which reads as `surprised`. When this ran first, every visitor
+// came out "Wide awake" no matter what they actually did.
+ok('a landed smile beats a surprised spike',
+  moodFromExercises(
+    [A('smile', 0.9, 300), A('angry', 0.05, null), A('sad', 0.05, null), A('laugh', 0.2, null)],
+    { ...none, surprised: 0.85 }, day),
+  'warm');
+ok('a landed angry beats a surprised spike',
+  moodFromExercises(
+    [A('smile', 0.1, null), A('angry', 0.5, 900), A('sad', 0.05, null), A('laugh', 0.05, null)],
+    { ...none, surprised: 0.9 }, day),
+  'fired');
+
+console.log('\nside channels still decide when nothing landed:');
+ok('nothing performed + very startled → sparked',
+  moodFromExercises(
+    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
+    { ...none, surprised: 0.8 }, day),
+  'sparked');
+ok('nothing performed + fearful → wound',
+  moodFromExercises(
+    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
+    { ...none, fearful: 0.7 }, day),
+  'wound');
+ok('nothing performed + disgusted → over',
+  moodFromExercises(
+    [A('smile', 0.05, null), A('angry', 0.02, null), A('sad', 0.02, null), A('laugh', 0.02, null)],
+    { ...none, disgusted: 0.7 }, day),
+  'over');
 
 console.log('\nease is comparable across channels (that is the whole point):');
 for (const e of EXERCISES) {

@@ -138,12 +138,6 @@ export function moodFromExercises(
   peaks: Expressions,
   daypart: Daypart = daypartFor(),
 ): MoodId {
-  // Secondary signals first. Someone who spent the whole sequence visibly
-  // startled is telling us more than which face they performed best.
-  if (peaks.surprised > 0.45) return 'sparked';
-  if (peaks.fearful > 0.4) return 'wound';
-  if (peaks.disgusted > 0.4) return 'over';
-
   const live = dropSuperseded(attempts);
   const scored = live.flatMap((attempt) => {
     const exercise = EXERCISES.find((e) => e.id === attempt.exerciseId);
@@ -164,6 +158,19 @@ export function moodFromExercises(
     .filter((entry) => entry.attempt.peak / entry.exercise.threshold >= NEAR_MISS)
     .sort((a, b) => b.ease - a.ease)[0];
   if (near) return near.exercise.mood;
+
+  // Only now do the side channels get a say.
+  //
+  // These used to run FIRST and buried everything else: pulling an angry or a
+  // laughing face raises the eyebrows and opens the mouth, which face-api
+  // reads as `surprised`, so virtually every visitor came out "Wide awake"
+  // regardless of what they actually performed. A face the visitor deliberately
+  // pulled always outranks a side effect of pulling it, so these are a
+  // fallback for when nothing landed — and the bars are high, because these
+  // channels co-fire so readily during the rounds.
+  if (peaks.surprised > 0.7) return 'sparked';
+  if (peaks.fearful > 0.6) return 'wound';
+  if (peaks.disgusted > 0.6) return 'over';
 
   // A face that gives nothing away is its own kind of read, and late in the
   // day it means something different.

@@ -75,6 +75,11 @@ Three things in `src/mood/classify.ts` are load-bearing, and `npm test` covers a
   laugh threshold, so someone laughing their head off would be told they were merely Warm.
 - **Smile and laugh are the same channel.** Reaching the laugh threshold means the smile
   round was sailed through, so the smile result carries no information and is dropped.
+- **The side channels are a fallback, not an override.** `surprised`, `fearful` and
+  `disgusted` only decide the mood when nothing was performed. They used to run first, and
+  because pulling an angry or laughing face raises the brows and opens the mouth — which
+  face-api reads as `surprised` — virtually every visitor came out "Wide awake" regardless
+  of what they did.
 
 **Every round has an ~8s escape**, and it is never presented as failure. Plenty of people
 cannot trigger angry or sad however hard they try, and being told you failed at having a
@@ -91,6 +96,19 @@ feeling is a bad note to hit in a shopping mall.
 time (~600 KB), the service worker precaches them, and the app loads them from its own
 origin. Fonts come from `@fontsource-variable/*` for the same reason, and the closing QR
 code is generated locally.
+
+### Two iOS Safari workarounds
+
+Both found on a real phone, neither reproducible in headless Chromium, both in
+`src/scenes/CameraView.tsx`:
+
+- **The camera's rounding is on the `<video>` itself**, not a parent with `overflow: hidden`.
+  The video carries `transform: scaleX(-1)` to mirror it, which gives it its own compositing
+  layer, and iOS then ignores the parent's rounded clip — it rendered as a hard square
+  sitting over the meter ring.
+- **Hidden state uses `visibility`, not just `opacity`.** iOS composites video separately and
+  does not reliably honour an opacity-0 ancestor, which left a stray disc of live camera
+  floating on the mood reveal.
 
 ### Privacy
 
