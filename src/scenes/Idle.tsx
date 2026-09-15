@@ -20,7 +20,7 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
 
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 40 }}>
 
@@ -45,7 +45,7 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
             fontSize: 72,
             lineHeight: 1.12,
             letterSpacing: '-0.03em',
-            color: 'var(--amber)',
+            color: 'var(--magenta-lit)',
             maxWidth: 820,
           }}
         >
@@ -59,7 +59,7 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
             margin: '28px 0 0',
             fontSize: 38,
             lineHeight: 1.45,
-            color: 'var(--cream-dim)',
+            color: 'var(--paper-dim)',
             maxWidth: 760,
           }}
         >

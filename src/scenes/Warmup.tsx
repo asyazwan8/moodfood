@@ -12,7 +12,7 @@ import { WARMUP, pickFrom } from '../story/script';
 export function Warmup({ faceFound, seed }: { faceFound: boolean; seed: number }) {
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 150 }}>
         <h2
@@ -37,7 +37,7 @@ export function Warmup({ faceFound, seed }: { faceFound: boolean; seed: number }
           style={{
             margin: '24px 0 0',
             fontSize: 38,
-            color: 'var(--cream-dim)',
+            color: 'var(--paper-dim)',
             opacity: faceFound ? 1 : 0,
             transition: 'opacity 600ms ease',
           }}

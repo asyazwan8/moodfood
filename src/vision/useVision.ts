@@ -284,12 +284,12 @@ function mockPhoto(): string {
   if (!ctx) return '';
 
   const grad = ctx.createLinearGradient(0, 0, 720, 900);
-  grad.addColorStop(0, '#2A1020');
-  grad.addColorStop(1, '#141A38');
+  grad.addColorStop(0, '#180A2E');
+  grad.addColorStop(1, '#05102A');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 720, 900);
 
-  ctx.fillStyle = 'rgba(255, 244, 230, 0.16)';
+  ctx.fillStyle = 'rgba(242, 246, 255, 0.16)';
   ctx.beginPath();
   ctx.arc(360, 360, 150, 0, Math.PI * 2);
   ctx.fill();
@@ -297,7 +297,7 @@ function mockPhoto(): string {
   ctx.ellipse(360, 760, 240, 220, 0, Math.PI, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = 'rgba(255, 244, 230, 0.5)';
+  ctx.fillStyle = 'rgba(242, 246, 255, 0.5)';
   ctx.font = '600 34px system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('demo mode', 360, 860);

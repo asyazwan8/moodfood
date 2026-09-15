@@ -18,7 +18,7 @@ export function Encouragement({ mood, seed }: { mood: MoodId; seed: number }) {
 
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <TypedLines

@@ -26,7 +26,7 @@ export function Consent({
 
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 44 }}>
         <h2
@@ -47,7 +47,7 @@ export function Consent({
           <>
             <p style={bodyStyle}>{CONSENT.denied.body}</p>
             {errorMessage && (
-              <p style={{ ...bodyStyle, fontSize: 30, color: 'var(--cream-faint)' }}>{errorMessage}</p>
+              <p style={{ ...bodyStyle, fontSize: 30, color: 'var(--paper-faint)' }}>{errorMessage}</p>
             )}
           </>
         ) : (
@@ -87,7 +87,7 @@ const bodyStyle: React.CSSProperties = {
   margin: 0,
   fontSize: 42,
   lineHeight: 1.5,
-  color: 'var(--cream-dim)',
+  color: 'var(--paper-dim)',
   maxWidth: 840,
 };
 
@@ -95,7 +95,7 @@ const primaryButton: React.CSSProperties = {
   appearance: 'none',
   border: 'none',
   borderRadius: 'var(--r-pill)',
-  background: 'var(--cream)',
+  background: 'var(--paper)',
   color: 'var(--ink)',
   fontFamily: 'var(--font-display)',
   fontWeight: 900,
@@ -109,7 +109,7 @@ const secondaryButton: React.CSSProperties = {
   appearance: 'none',
   border: 'none',
   background: 'transparent',
-  color: 'var(--cream-faint)',
+  color: 'var(--paper-faint)',
   fontFamily: 'var(--font-body)',
   fontSize: 32,
   padding: 18,

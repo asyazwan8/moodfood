@@ -24,7 +24,7 @@ export function Polaroid({
         width,
         padding: width * 0.055,
         paddingBottom: caption ? width * 0.18 : width * 0.055,
-        background: 'var(--cream)',
+        background: 'var(--paper)',
         borderRadius: 10,
         transform: `rotate(${tilt}deg)`,
         boxShadow: '0 40px 90px rgba(0,0,0,.55), 0 4px 10px rgba(0,0,0,.4)',
@@ -49,7 +49,7 @@ export function Polaroid({
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
-          <span style={{ color: 'var(--cream-faint)', fontSize: 26 }}>no photo</span>
+          <span style={{ color: 'var(--paper-faint)', fontSize: 26 }}>no photo</span>
         )}
       </div>
 

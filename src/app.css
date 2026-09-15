@@ -12,7 +12,7 @@
      may be sitting on a bright amber blob ten seconds from now. The scrim
      handles the top and bottom; this handles the middle, without having to
      flatten the background everywhere just to protect the text. */
-  text-shadow: 0 2px 26px rgba(16, 8, 24, 0.62), 0 1px 3px rgba(16, 8, 24, 0.4);
+  text-shadow: 0 2px 26px rgba(3, 6, 16, 0.62), 0 1px 3px rgba(3, 6, 16, 0.4);
 }
 
 /* The polaroid and the food card sit on their own solid surfaces, so the
@@ -38,7 +38,7 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  background: var(--cream);
+  background: var(--paper);
   opacity: 0.85;
   animation: press-pulse 2.1s ease-in-out infinite;
 }
@@ -47,11 +47,11 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 244, 230, 0.35);
+    box-shadow: 0 0 0 0 rgba(242, 246, 255, 0.35);
   }
   50% {
     transform: scale(0.82);
-    box-shadow: 0 0 0 30px rgba(255, 244, 230, 0);
+    box-shadow: 0 0 0 30px rgba(242, 246, 255, 0);
   }
 }
 
@@ -74,7 +74,7 @@
 .flash {
   position: absolute;
   inset: 0;
-  background: var(--cream);
+  background: var(--paper);
   pointer-events: none;
   animation: flash 620ms ease-out forwards;
 }
@@ -198,10 +198,10 @@
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(20, 10, 30, 0.55) 0%,
-    rgba(20, 10, 30, 0.22) 22%,
-    rgba(20, 10, 30, 0.18) 50%,
-    rgba(20, 10, 30, 0.55) 78%,
-    rgba(20, 10, 30, 0.85) 100%
+    rgba(5, 9, 22, 0.55) 0%,
+    rgba(5, 9, 22, 0.22) 22%,
+    rgba(5, 9, 22, 0.18) 50%,
+    rgba(5, 9, 22, 0.55) 78%,
+    rgba(5, 9, 22, 0.85) 100%
   );
 }

@@ -24,7 +24,7 @@ export function Capture({ count, flashing }: { count: number; flashing: boolean 
               fontWeight: 900,
               fontSize: 420,
               lineHeight: 1,
-              color: 'var(--cream)',
+              color: 'var(--paper)',
               textShadow: '0 0 120px rgba(0,0,0,.6)',
             }}
           >

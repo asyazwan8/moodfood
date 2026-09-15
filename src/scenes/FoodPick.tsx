@@ -27,7 +27,7 @@ export function FoodPick({
 }) {
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 36 }}>
         <p
@@ -37,7 +37,7 @@ export function FoodPick({
             fontWeight: 800,
             fontSize: 54,
             letterSpacing: '-0.03em',
-            color: 'var(--amber)',
+            color: 'var(--magenta-lit)',
           }}
         >
           {blind ? 'Cannot read you — but I can still feed you.' : pickFrom(FOOD.intro, seed)}
@@ -46,8 +46,8 @@ export function FoodPick({
         <div
           className="rise"
           style={{
-            background: 'rgba(255,244,230,.07)',
-            border: '2px solid rgba(255,244,230,.14)',
+            background: 'rgba(242,246,255,.07)',
+            border: '2px solid rgba(242,246,255,.14)',
             borderRadius: 'var(--r-lg)',
             padding: 56,
             backdropFilter: 'blur(26px)',
@@ -57,7 +57,7 @@ export function FoodPick({
             gap: 30,
           }}
         >
-          <span style={{ fontSize: 30, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--cream-faint)' }}>
+          <span style={{ fontSize: 30, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--paper-faint)' }}>
             {outlet.cuisine}
           </span>
 
@@ -74,9 +74,9 @@ export function FoodPick({
             {outlet.dish}
           </h2>
 
-          <p style={{ margin: 0, fontSize: 38, lineHeight: 1.45, color: 'var(--cream-dim)' }}>{outlet.why}</p>
+          <p style={{ margin: 0, fontSize: 38, lineHeight: 1.45, color: 'var(--paper-dim)' }}>{outlet.why}</p>
 
-          <div style={{ height: 2, background: 'rgba(255,244,230,.14)', margin: '6px 0' }} />
+          <div style={{ height: 2, background: 'rgba(242,246,255,.14)', margin: '6px 0' }} />
 
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
             <span
@@ -85,12 +85,12 @@ export function FoodPick({
                 fontWeight: 900,
                 fontSize: 54,
                 letterSpacing: '-0.03em',
-                color: 'var(--cream)',
+                color: 'var(--paper)',
               }}
             >
               {outlet.name}
             </span>
-            <span style={{ fontSize: 34, color: 'var(--amber)', fontWeight: 600 }}>
+            <span style={{ fontSize: 34, color: 'var(--magenta-lit)', fontWeight: 600 }}>
               {outlet.lot ? `${outlet.where} · ${outlet.lot}` : outlet.where}
             </span>
           </div>
@@ -99,13 +99,13 @@ export function FoodPick({
         <div style={{ display: 'flex', alignItems: 'center', gap: 22, minHeight: 92 }}>
           {canSwap ? (
             <>
-              <span style={{ fontSize: 32, color: 'var(--cream-faint)' }}>{FOOD.again}</span>
+              <span style={{ fontSize: 32, color: 'var(--paper-faint)' }}>{FOOD.again}</span>
               <button data-stop-press onClick={onSwap} style={swapButton}>
                 {FOOD.againCta}
               </button>
             </>
           ) : (
-            <span style={{ fontSize: 30, color: 'var(--cream-faint)' }}>{FOOD.exhausted}</span>
+            <span style={{ fontSize: 30, color: 'var(--paper-faint)' }}>{FOOD.exhausted}</span>
           )}
         </div>
       </div>
@@ -117,9 +117,9 @@ export function FoodPick({
 
 const swapButton: React.CSSProperties = {
   appearance: 'none',
-  border: '2px solid rgba(255,244,230,.3)',
+  border: '2px solid rgba(242,246,255,.3)',
   background: 'transparent',
-  color: 'var(--cream)',
+  color: 'var(--paper)',
   borderRadius: 'var(--r-pill)',
   fontFamily: 'var(--font-body)',
   fontWeight: 600,

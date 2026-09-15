@@ -21,7 +21,7 @@ export function SmileGate({
 }) {
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       {/* The ring sits around the camera blob, which App positions behind this. */}
       <div
@@ -57,7 +57,7 @@ export function SmileGate({
             margin: '30px 0 0',
             fontSize: 46,
             lineHeight: 1.3,
-            color: holding ? 'var(--amber)' : 'var(--cream-dim)',
+            color: holding ? 'var(--magenta-lit)' : 'var(--paper-dim)',
             fontWeight: holding ? 800 : 400,
             fontFamily: holding ? 'var(--font-display)' : 'var(--font-body)',
             minHeight: 120,

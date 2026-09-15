@@ -30,7 +30,7 @@ export function PressCue({ label = 'Touch anywhere', show = true }: { label?: st
           fontSize: 30,
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
-          color: 'var(--cream-dim)',
+          color: 'var(--paper-dim)',
         }}
       >
         {label}

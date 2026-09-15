@@ -97,13 +97,20 @@ If WebGL2 is unavailable entirely, a CSS fallback takes over.
 
 ## Making it properly IPC's
 
-Everything IPC-specific is deliberately quarantined, because the brand assets here are
-**stand-ins** — ipc.com.my was unreachable from the machine that built this.
+The logo and the palette are **IPC's real ones**: `public/brand/IPC_logo.png` is the
+official mark, and the brand colours in `src/brand/tokens.ts` were sampled straight out of
+that file (`#0047B9` blue, `#E50695` magenta). The typeface is still a stand-in.
+
+One thing worth knowing if you touch the colours: IPC's logo is built for a white
+background, and its blue scores **2.38:1** against the kiosk's dark ground — unreadable. So
+the palette has two tiers: the true brand colours for the logo itself, and lifted variants
+(`blueLit`, `magentaLit`) for text and accents on dark. The logo sits on a light chip so its
+artwork stays exactly correct rather than being recoloured.
 
 | To change | Edit |
 |---|---|
 | Brand colours | `src/brand/tokens.ts` and the matching vars in `src/brand/brand.css` |
-| The logo | Replace `public/brand/logo.svg` — every place the logo appears renders that one file |
+| The logo | Replace `public/brand/IPC_logo.png` — every place the logo appears renders that one file |
 | The typeface | Add `@font-face` in `src/brand/brand.css`, point `--font-display` / `--font-body` at it |
 | **Every word the kiosk says** | `src/story/script.ts` — all of it, one file |
 | Mood words and palettes | `src/mood/moods.ts` |

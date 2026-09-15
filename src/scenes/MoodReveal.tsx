@@ -10,10 +10,10 @@ export function MoodReveal({ mood, photo }: { mood: MoodId; photo: string | null
 
   return (
     <div className="scene">
-      <Logo size={64} />
+      <Logo size={96} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 56 }}>
-        <p style={{ margin: 0, fontSize: 34, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--cream-faint)' }}>
+        <p style={{ margin: 0, fontSize: 34, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--paper-faint)' }}>
           {MOOD_INTRO}
         </p>
 
@@ -44,7 +44,7 @@ export function MoodReveal({ mood, photo }: { mood: MoodId; photo: string | null
             margin: 0,
             fontSize: 40,
             lineHeight: 1.45,
-            color: 'var(--cream-dim)',
+            color: 'var(--paper-dim)',
             textAlign: 'center',
             maxWidth: 820,
           }}

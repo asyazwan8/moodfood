@@ -10,19 +10,25 @@
 @import '@fontsource-variable/inter';
 
 :root {
-  --ink: #140a1e;
-  --ink-soft: #241236;
+  /* Sampled from public/brand/IPC_logo.png — see src/brand/tokens.ts for why
+     there are "lit" variants. Never put --blue on the dark ground. */
+  --blue: #0047b9;
+  --magenta: #e50695;
 
-  --red: #e4322b;
-  --amber: #ffb03b;
-  --rose: #e8467f;
-  --teal: #17a79c;
-  --blue: #3d6be5;
-  --violet: #8b5cf6;
+  --blue-lit: #5b9bff;
+  --magenta-lit: #ff4fb8;
 
-  --cream: #fff4e6;
-  --cream-dim: rgba(255, 244, 230, 0.62);
-  --cream-faint: rgba(255, 244, 230, 0.28);
+  --violet: #7b5bff;
+  --cyan: #00cfe0;
+  --sky: #2e7bff;
+  --pink: #ff6fa8;
+
+  --ink: #070c1c;
+  --ink-soft: #101a3a;
+
+  --paper: #f2f6ff;
+  --paper-dim: rgba(242, 246, 255, 0.64);
+  --paper-faint: rgba(242, 246, 255, 0.3);
 
   --font-display: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
   --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
@@ -48,7 +54,7 @@ body,
   margin: 0;
   overflow: hidden;
   background: var(--ink);
-  color: var(--cream);
+  color: var(--paper);
   font-family: var(--font-body);
 }
 

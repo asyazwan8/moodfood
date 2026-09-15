@@ -31,7 +31,7 @@ export function Reading({ seed }: { seed: number }) {
             fontWeight: 800,
             fontSize: 62,
             letterSpacing: '-0.03em',
-            color: 'var(--cream-dim)',
+            color: 'var(--paper-dim)',
           }}
         >
           {pickFrom(READING, seed)}

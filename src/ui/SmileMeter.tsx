@@ -35,7 +35,7 @@ export function SmileMeter({
       style={{
         transform: `rotate(-90deg) scale(${holding ? 1.04 : 1})`,
         transition: 'transform 320ms cubic-bezier(.2,.9,.3,1.4)',
-        filter: holding ? 'drop-shadow(0 0 40px rgba(255,176,59,.55))' : 'none',
+        filter: holding ? 'drop-shadow(0 0 40px rgba(255,79,184,.55))' : 'none',
       }}
       aria-hidden
     >
@@ -44,7 +44,7 @@ export function SmileMeter({
         cy={SIZE / 2}
         r={RADIUS}
         fill="none"
-        stroke="rgba(255,244,230,.14)"
+        stroke="rgba(242,246,255,.14)"
         strokeWidth={STROKE}
       />
       {/* The bar the visitor has to clear. */}
@@ -53,7 +53,7 @@ export function SmileMeter({
         cy={SIZE / 2}
         r={RADIUS}
         fill="none"
-        stroke="rgba(255,244,230,.34)"
+        stroke="rgba(242,246,255,.34)"
         strokeWidth={STROKE}
         strokeLinecap="round"
         strokeDasharray={`3 ${CIRCUMFERENCE}`}
@@ -64,7 +64,7 @@ export function SmileMeter({
         cy={SIZE / 2}
         r={RADIUS}
         fill="none"
-        stroke={clamped > target ? 'var(--amber)' : 'var(--rose)'}
+        stroke={clamped > target ? 'var(--magenta-lit)' : 'var(--pink)'}
         strokeWidth={STROKE}
         strokeLinecap="round"
         strokeDasharray={`${dash} ${CIRCUMFERENCE}`}
