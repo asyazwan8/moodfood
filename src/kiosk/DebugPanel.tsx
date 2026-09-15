@@ -88,7 +88,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 2 }}>
       <span style={{ opacity: 0.6 }}>{label}</span>
-      <span style={{ fontWeight: 600, textAlign: 'right' }}>{value}</span>
+      <span style={{ fontWeight: 'var(--w-label)', textAlign: 'right' }}>{value}</span>
     </div>
   );
 }

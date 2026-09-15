@@ -34,10 +34,10 @@ export function FoodPick({
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 'var(--w-display-strong)',
             fontSize: 54,
             letterSpacing: '-0.03em',
-            color: 'var(--magenta-lit)',
+            color: 'var(--magenta)',
           }}
         >
           {blind ? 'Cannot read you — but I can still feed you.' : pickFrom(FOOD.intro, seed)}
@@ -46,8 +46,9 @@ export function FoodPick({
         <div
           className="rise"
           style={{
-            background: 'rgba(242,246,255,.07)',
-            border: '2px solid rgba(242,246,255,.14)',
+            background: 'rgba(255,255,255,.72)',
+            border: '1px solid rgba(10,19,48,.08)',
+            boxShadow: '0 30px 80px rgba(10,19,48,.10)',
             borderRadius: 'var(--r-lg)',
             padding: 56,
             backdropFilter: 'blur(26px)',
@@ -57,7 +58,7 @@ export function FoodPick({
             gap: 30,
           }}
         >
-          <span style={{ fontSize: 30, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--paper-faint)' }}>
+          <span style={{ fontSize: 30, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
             {outlet.cuisine}
           </span>
 
@@ -65,7 +66,7 @@ export function FoodPick({
             style={{
               margin: 0,
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 'var(--w-display)',
               fontSize: 78,
               lineHeight: 1.04,
               letterSpacing: '-0.04em',
@@ -74,7 +75,7 @@ export function FoodPick({
             {outlet.dish}
           </h2>
 
-          <p style={{ margin: 0, fontSize: 38, lineHeight: 1.45, color: 'var(--paper-dim)' }}>{outlet.why}</p>
+          <p style={{ margin: 0, fontSize: 38, lineHeight: 1.45, color: 'var(--ink-dim)' }}>{outlet.why}</p>
 
           <div style={{ height: 2, background: 'rgba(242,246,255,.14)', margin: '6px 0' }} />
 
@@ -82,15 +83,15 @@ export function FoodPick({
             <span
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
+                fontWeight: 'var(--w-display)',
                 fontSize: 54,
                 letterSpacing: '-0.03em',
-                color: 'var(--paper)',
+                color: 'var(--ink)',
               }}
             >
               {outlet.name}
             </span>
-            <span style={{ fontSize: 34, color: 'var(--magenta-lit)', fontWeight: 600 }}>
+            <span style={{ fontSize: 34, color: 'var(--magenta)', fontWeight: 'var(--w-label)' }}>
               {outlet.lot ? `${outlet.where} · ${outlet.lot}` : outlet.where}
             </span>
           </div>
@@ -99,13 +100,13 @@ export function FoodPick({
         <div style={{ display: 'flex', alignItems: 'center', gap: 22, minHeight: 92 }}>
           {canSwap ? (
             <>
-              <span style={{ fontSize: 32, color: 'var(--paper-faint)' }}>{FOOD.again}</span>
+              <span style={{ fontSize: 32, color: 'var(--ink-faint)' }}>{FOOD.again}</span>
               <button data-stop-press onClick={onSwap} style={swapButton}>
                 {FOOD.againCta}
               </button>
             </>
           ) : (
-            <span style={{ fontSize: 30, color: 'var(--paper-faint)' }}>{FOOD.exhausted}</span>
+            <span style={{ fontSize: 30, color: 'var(--ink-faint)' }}>{FOOD.exhausted}</span>
           )}
         </div>
       </div>
@@ -117,12 +118,12 @@ export function FoodPick({
 
 const swapButton: React.CSSProperties = {
   appearance: 'none',
-  border: '2px solid rgba(242,246,255,.3)',
+  border: '1px solid rgba(10,19,48,.22)',
   background: 'transparent',
-  color: 'var(--paper)',
+  color: 'var(--ink)',
   borderRadius: 'var(--r-pill)',
   fontFamily: 'var(--font-body)',
-  fontWeight: 600,
+  fontWeight: 'var(--w-label)',
   fontSize: 32,
   padding: '20px 38px',
   cursor: 'pointer',

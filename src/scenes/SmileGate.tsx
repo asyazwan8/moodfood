@@ -41,7 +41,7 @@ export function SmileGate({
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 'var(--w-display)',
             fontSize: 84,
             lineHeight: 1.04,
             letterSpacing: '-0.04em',
@@ -57,8 +57,8 @@ export function SmileGate({
             margin: '30px 0 0',
             fontSize: 46,
             lineHeight: 1.3,
-            color: holding ? 'var(--magenta-lit)' : 'var(--paper-dim)',
-            fontWeight: holding ? 800 : 400,
+            color: holding ? 'var(--magenta)' : 'var(--ink-dim)',
+            fontWeight: holding ? 'var(--w-label)' : 'var(--w-body)',
             fontFamily: holding ? 'var(--font-display)' : 'var(--font-body)',
             minHeight: 120,
           }}

@@ -82,16 +82,14 @@ A camera in a public mall is a real obligation, not a checkbox.
   visitor's face is gone before the next walks up.
 - The consent scene says all of this in plain language before the camera turns on.
 
-### Performance
+### Weight
 
-The lava lamp is a fragment shader and therefore fill-rate bound. It renders at 55% of
-screen resolution and scales up — the blobs are soft, so this is invisible, and it costs
-about a third of the pixels. If the first second of frames still runs slow, the render
-scale drops again automatically (`src/lava/LavaLamp.tsx`).
+The kiosk precaches everything so it can run offline, so every asset in `public/` is paid
+for on install. IPC's background arrived as a 5.2 MB PNG; it ships as a 666 KB WebP, an 87%
+saving with no visible loss on a soft gradient. The original lives in `assets-src/`, outside
+`public/`, so it is never served — see the note there for how to regenerate.
 
-This matters more than it sounds: when the GPU can't keep up, the main thread starves and
-every timer in the story — the typewriter, the countdown, the smile hold — slows with it.
-If WebGL2 is unavailable entirely, a CSS fallback takes over.
+Total precache: about 3.3 MB, most of which is the face-detection library.
 
 ---
 

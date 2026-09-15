@@ -27,7 +27,7 @@ export function Polaroid({
         background: 'var(--paper)',
         borderRadius: 10,
         transform: `rotate(${tilt}deg)`,
-        boxShadow: '0 40px 90px rgba(0,0,0,.55), 0 4px 10px rgba(0,0,0,.4)',
+        boxShadow: '0 34px 70px rgba(10,19,48,.20), 0 2px 6px rgba(10,19,48,.10)',
         position: 'relative',
       }}
     >
@@ -35,7 +35,7 @@ export function Polaroid({
         style={{
           width: '100%',
           height: photoHeight,
-          background: 'var(--ink-soft)',
+          background: 'var(--paper-soft)',
           borderRadius: 4,
           overflow: 'hidden',
           display: 'grid',
@@ -49,7 +49,7 @@ export function Polaroid({
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
-          <span style={{ color: 'var(--paper-faint)', fontSize: 26 }}>no photo</span>
+          <span style={{ color: 'var(--ink-faint)', fontSize: 26 }}>no photo</span>
         )}
       </div>
 
@@ -63,7 +63,7 @@ export function Polaroid({
             bottom: width * 0.045,
             textAlign: 'center',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 'var(--w-display-strong)',
             fontSize: width * 0.078,
             color: 'var(--ink)',
             letterSpacing: '-0.02em',

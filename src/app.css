@@ -8,18 +8,6 @@
   flex-direction: column;
   animation: scene-in 620ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
 
-  /* The lamp drifts underneath, so a line that is comfortably readable now
-     may be sitting on a bright amber blob ten seconds from now. The scrim
-     handles the top and bottom; this handles the middle, without having to
-     flatten the background everywhere just to protect the text. */
-  text-shadow: 0 2px 26px rgba(3, 6, 16, 0.62), 0 1px 3px rgba(3, 6, 16, 0.4);
-}
-
-/* The polaroid and the food card sit on their own solid surfaces, so the
-   shadow would just muddy them. */
-.scene .no-shadow,
-.scene button {
-  text-shadow: none;
 }
 
 @keyframes scene-in {
@@ -38,8 +26,8 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  background: var(--paper);
-  opacity: 0.85;
+  background: var(--blue);
+  opacity: 0.8;
   animation: press-pulse 2.1s ease-in-out infinite;
 }
 
@@ -47,11 +35,11 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(242, 246, 255, 0.35);
+    box-shadow: 0 0 0 0 rgba(0, 71, 185, 0.3);
   }
   50% {
     transform: scale(0.82);
-    box-shadow: 0 0 0 30px rgba(242, 246, 255, 0);
+    box-shadow: 0 0 0 30px rgba(0, 71, 185, 0);
   }
 }
 
@@ -74,7 +62,7 @@
 .flash {
   position: absolute;
   inset: 0;
-  background: var(--paper);
+  background: #ffffff;
   pointer-events: none;
   animation: flash 620ms ease-out forwards;
 }
@@ -184,24 +172,38 @@
 }
 
 /*
- * Legibility scrim, between the lava lamp and the content.
+ * Legibility veil, over the background artwork.
  *
- * The blobs drift, so any given line of copy will sooner or later end up on
- * top of a bright amber one. Without this the kiosk is beautiful and, twice a
- * minute, unreadable. Weighted to the top and bottom edges where the logo and
- * the press cue live, and kept light through the middle so the lamp still
- * shows through.
+ * IPC's background has a saturated blue/magenta blob whose core is #0008AB.
+ * Dark body copy crossing that drops to roughly 1.5:1 and vanishes. This
+ * washes the artwork back toward paper just enough that text is readable
+ * anywhere on screen, while the gradient still clearly shows through.
  */
-.scrim {
-  position: fixed;
+.backdrop-veil {
+  position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(5, 9, 22, 0.55) 0%,
-    rgba(5, 9, 22, 0.22) 22%,
-    rgba(5, 9, 22, 0.18) 50%,
-    rgba(5, 9, 22, 0.55) 78%,
-    rgba(5, 9, 22, 0.85) 100%
+    rgba(253, 254, 255, 0.82) 0%,
+    rgba(253, 254, 255, 0.55) 26%,
+    rgba(253, 254, 255, 0.5) 62%,
+    rgba(253, 254, 255, 0.78) 88%,
+    rgba(253, 254, 255, 0.9) 100%
   );
+}
+
+/* Very slow drift, so the background does not read as a flat image. */
+.backdrop-drift {
+  animation: backdrop-drift 46s ease-in-out infinite;
+}
+
+@keyframes backdrop-drift {
+  0%,
+  100% {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.07) translate3d(0, -1.6%, 0);
+  }
 }

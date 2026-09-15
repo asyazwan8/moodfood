@@ -1,5 +1,3 @@
-import type { LavaPalette } from '../lava/palette';
-
 /**
  * The mood vocabulary.
  *
@@ -20,6 +18,21 @@ export type MoodId =
   | 'wound'
   | 'over';
 
+/**
+ * How the background artwork shifts for this mood.
+ *
+ * IPC's background is a fixed blue-and-magenta gradient, so the moods are
+ * expressed by pushing its hue and saturation rather than by swapping colours.
+ * Positive hue moves toward magenta, negative toward cyan — which happens to
+ * map neatly onto warm and cool moods.
+ */
+export type BackdropTint = {
+  /** Degrees of hue rotation. + toward magenta, − toward cyan. */
+  hue: number;
+  saturate: number;
+  brightness: number;
+};
+
 export type Mood = {
   id: MoodId;
   /** The big word on the reveal screen. */
@@ -28,13 +41,8 @@ export type Mood = {
   read: string;
   /** Tags used to match food. See src/data/ipcFood.ts. */
   craves: string[];
-  palette: LavaPalette;
+  tint: BackdropTint;
 };
-
-const INK = '#070C1C';
-const INK_BLUE = '#05102A';
-/* Deep purple ground for the magenta-led moods — still inside IPC's range. */
-const INK_PLUM = '#180A2E';
 
 export const MOODS: Record<MoodId, Mood> = {
   bright: {
@@ -42,71 +50,65 @@ export const MOODS: Record<MoodId, Mood> = {
     word: 'Bright',
     read: 'You walked in already lit up. I did not have to work for this one.',
     craves: ['celebratory', 'shareable', 'sweet', 'fun'],
-    palette: { a: '#E50695', b: '#FF6FA8', c: '#FF8AC9', bgA: INK, bgB: INK_PLUM },
+    tint: { hue: 26, saturate: 1.16, brightness: 1.04 },
   },
   warm: {
     id: 'warm',
     word: 'Warm',
     read: 'Quietly fine. Not performing it — just fine.',
     craves: ['comforting', 'shareable', 'classic'],
-    palette: { a: '#E50695', b: '#7B5BFF', c: '#FF6FBE', bgA: INK, bgB: INK_PLUM },
+    tint: { hue: 15, saturate: 1.06, brightness: 1.03 },
   },
   steady: {
     id: 'steady',
     word: 'Steady',
     read: 'Level, all the way through. Nothing is rattling you.',
     craves: ['classic', 'quick', 'comforting'],
-    palette: { a: '#2E7BFF', b: '#00CFE0', c: '#6FE3F0', bgA: INK, bgB: INK_BLUE },
+    tint: { hue: 0, saturate: 1, brightness: 1.02 },
   },
   drifting: {
     id: 'drifting',
     word: 'Running on empty',
     read: 'It is in the eyes. You have been going a long time.',
     craves: ['comforting', 'hearty', 'caffeine', 'sweet'],
-    palette: { a: '#4A3FA8', b: '#2E7BFF', c: '#8B7BFF', bgA: INK, bgB: INK_BLUE },
+    tint: { hue: 10, saturate: 0.78, brightness: 1 },
   },
   heavy: {
     id: 'heavy',
     word: 'Carrying something',
     read: 'It sits in the shoulders more than the face, honestly.',
     craves: ['comforting', 'warm-broth', 'sweet', 'gentle'],
-    palette: { a: '#1E5BD6', b: '#3B2F8F', c: '#5B9BFF', bgA: INK, bgB: INK_BLUE },
+    tint: { hue: -10, saturate: 0.72, brightness: 0.97 },
   },
   fired: {
     id: 'fired',
     word: 'Fired up',
     read: 'Jaw set. Shoulders up. You are not relaxed.',
     craves: ['spicy', 'grilled', 'bold', 'hearty'],
-    palette: { a: '#E50695', b: '#FF3DAE', c: '#FF7AC4', bgA: INK, bgB: INK_PLUM },
+    tint: { hue: 34, saturate: 1.32, brightness: 1.01 },
   },
   sparked: {
     id: 'sparked',
     word: 'Wide awake',
     read: 'Eyebrows up, eyes everywhere, taking it all in.',
     craves: ['adventurous', 'new', 'shareable', 'fun'],
-    palette: { a: '#E50695', b: '#00CFE0', c: '#FF6FD0', bgA: INK, bgB: INK_PLUM },
+    tint: { hue: -26, saturate: 1.34, brightness: 1.05 },
   },
   wound: {
     id: 'wound',
     word: 'Wound up',
     read: 'Everything a little too quick. Shoulders up by your ears.',
     craves: ['warm-broth', 'gentle', 'caffeine', 'comforting'],
-    palette: { a: '#7B5BFF', b: '#00CFE0', c: '#9D8AFF', bgA: INK, bgB: INK_BLUE },
+    tint: { hue: -16, saturate: 0.92, brightness: 0.99 },
   },
   over: {
     id: 'over',
     word: 'Over it',
     read: 'Nothing left in the face at all. Today has used you up.',
     craves: ['bold', 'spicy', 'comforting', 'quick'],
-    palette: { a: '#00CFE0', b: '#2E7BFF', c: '#6FE3F0', bgA: INK, bgB: INK_BLUE },
+    tint: { hue: -36, saturate: 0.86, brightness: 1.01 },
   },
 };
 
-/** The ambient palette before we know anything about you — IPC's own colours. */
-export const IDLE_PALETTE: LavaPalette = {
-  a: '#2E7BFF',
-  b: '#E50695',
-  c: '#7B5BFF',
-  bgA: INK,
-  bgB: INK_BLUE,
-};
+/** Before we know anything about you: IPC's artwork exactly as supplied. */
+export const IDLE_TINT: BackdropTint = { hue: 0, saturate: 1, brightness: 1 };

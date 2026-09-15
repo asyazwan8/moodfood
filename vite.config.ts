@@ -11,7 +11,7 @@ export default defineConfig({
       workbox: {
         // The face-api weights are ~600KB and must be cached for the kiosk to
         // work with the network unplugged.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json,bin}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,json,bin}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
@@ -24,8 +24,8 @@ export default defineConfig({
         scope: '/',
         display: 'fullscreen',
         orientation: 'portrait',
-        background_color: '#070c1c',
-        theme_color: '#070c1c',
+        background_color: '#fdfeff',
+        theme_color: '#fdfeff',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

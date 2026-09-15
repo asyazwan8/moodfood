@@ -284,8 +284,8 @@ function mockPhoto(): string {
   if (!ctx) return '';
 
   const grad = ctx.createLinearGradient(0, 0, 720, 900);
-  grad.addColorStop(0, '#180A2E');
-  grad.addColorStop(1, '#05102A');
+  grad.addColorStop(0, '#E8ECFA');
+  grad.addColorStop(1, '#CFD9F5');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 720, 900);
 

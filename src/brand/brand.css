@@ -10,28 +10,26 @@
 @import '@fontsource-variable/inter';
 
 :root {
-  /* Sampled from public/brand/IPC_logo.png — see src/brand/tokens.ts for why
-     there are "lit" variants. Never put --blue on the dark ground. */
+  /* Sampled from public/brand/IPC_logo.png. */
   --blue: #0047b9;
   --magenta: #e50695;
 
-  --blue-lit: #5b9bff;
-  --magenta-lit: #ff4fb8;
+  --ink: #0a1330;
+  --ink-dim: rgba(10, 19, 48, 0.68);
+  --ink-faint: rgba(10, 19, 48, 0.42);
 
-  --violet: #7b5bff;
-  --cyan: #00cfe0;
-  --sky: #2e7bff;
-  --pink: #ff6fa8;
-
-  --ink: #070c1c;
-  --ink-soft: #101a3a;
-
-  --paper: #f2f6ff;
-  --paper-dim: rgba(242, 246, 255, 0.64);
-  --paper-faint: rgba(242, 246, 255, 0.3);
+  --paper: #fdfeff;
+  --paper-soft: #f2f5fc;
 
   --font-display: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
   --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+
+  /* Thin throughout — the background is soft and airy, and heavy type fights
+     it. Nothing in this app goes above 400. */
+  --w-display: 250;
+  --w-display-strong: 300;
+  --w-body: 300;
+  --w-label: 400;
 
   /* Design-size radii. The stage scales these along with everything else. */
   --r-sm: 16px;
@@ -39,7 +37,7 @@
   --r-lg: 56px;
   --r-pill: 999px;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -53,9 +51,10 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-body);
+  font-weight: var(--w-body);
 }
 
 /* A kiosk is touched by strangers all day. Nothing should be selectable,

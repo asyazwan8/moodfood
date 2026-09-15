@@ -3,56 +3,56 @@
  * THE BRAND FILE. This is the one place IPC's identity is defined.
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * `blue` and `magenta` are SAMPLED FROM public/brand/IPC_logo.png — they are
- * IPC's real brand colours, not an approximation.
+ * `blue` and `magenta` are SAMPLED FROM public/brand/IPC_logo.png — IPC's real
+ * brand colours, not an approximation.
  *
- * The catch: IPC's logo is built for a white background. On the kiosk's dark
- * ground the brand blue scores 2.38:1 contrast, which is unreadable. So the
- * palette has two tiers:
+ * The kiosk is light, because IPC's supplied background
+ * (public/brand/background.webp) is a near-white paper with a blue/magenta
+ * gradient on it. Measured against that paper:
  *
- *   · `blue` / `magenta`      — the true brand colours. Used for the logo
- *                               itself and anything sitting on light.
- *   · `blueLit` / `magentaLit` — the same hues lifted into legibility for use
- *                               as text and accents on the dark ground.
+ *   IPC blue    #0047B9   8.04:1  — good for anything
+ *   IPC magenta #E50695   4.37:1  — large text only, never body copy
+ *   ink         #0A1330  18.22:1  — body copy
  *
- * Never put raw `blue` on the dark ground. Use `blueLit`.
+ * TO CHANGE THE ARTWORK: replace public/brand/background.webp and
+ * public/brand/IPC_logo.png. Nothing else needs touching.
  */
 
 export const palette = {
-  // ── IPC's real brand colours, sampled from the logo ──────────────────────
-  /** #0047B9 — the dominant colour of the mark. */
+  /** #0047B9 — the dominant colour of the mark. Headings and accents. */
   blue: '#0047B9',
-  /** #E50695 — "SHOPPING CENTRE" and the two dots. */
+  /** #E50695 — "SHOPPING CENTRE" and the dots. Large text only. */
   magenta: '#E50695',
 
-  // ── The same hues, lifted for use on the dark ground ─────────────────────
-  blueLit: '#5B9BFF',
-  magentaLit: '#FF4FB8',
+  /** Body copy. A deep navy rather than black, to sit with the blue. */
+  ink: '#0A1330',
+  inkDim: 'rgba(10, 19, 48, 0.68)',
+  inkFaint: 'rgba(10, 19, 48, 0.42)',
 
-  // ── Derived supporting hues, all inside IPC's blue→magenta range ─────────
-  violet: '#7B5BFF',
-  cyan: '#00CFE0',
-  sky: '#2E7BFF',
-  pink: '#FF6FA8',
+  /** The paper, matching the background artwork's field. */
+  paper: '#FDFEFF',
+  paperSoft: '#F2F5FC',
+} as const;
 
-  /** The ground. Deep navy rather than neutral black, to sit under the blue. */
-  ink: '#070C1C',
-  inkSoft: '#101A3A',
-
-  /** Paper — a cool white, because a warm cream fights IPC's blue. */
-  paper: '#F2F6FF',
-  paperDim: 'rgba(242, 246, 255, 0.64)',
-  paperFaint: 'rgba(242, 246, 255, 0.3)',
+/**
+ * Type is thin throughout — the background is soft and airy, and heavy
+ * weights fight it. Nothing here goes above 400.
+ */
+export const weight = {
+  /** Big display lines. */
+  display: 250,
+  /** Mood words and anything that needs a touch more presence. */
+  displayStrong: 300,
+  /** Body copy. */
+  body: 300,
+  /** Small labels and buttons. */
+  label: 400,
 } as const;
 
 export const fonts = {
-  /** Headlines and mood words. Swap for IPC's real typeface when available. */
   display: "'Nunito Variable', 'Nunito', system-ui, sans-serif",
-  /** Everything else. */
   body: "'Inter Variable', 'Inter', system-ui, sans-serif",
 } as const;
 
 /** The kiosk screen this is designed for. Everything scales from here. */
 export const STAGE = { width: 1080, height: 1920 } as const;
-
-export type PaletteKey = keyof typeof palette;

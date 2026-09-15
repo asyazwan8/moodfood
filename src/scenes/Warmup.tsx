@@ -20,7 +20,7 @@ export function Warmup({ faceFound, seed }: { faceFound: boolean; seed: number }
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 'var(--w-display)',
             fontSize: 88,
             lineHeight: 1.04,
             letterSpacing: '-0.04em',
@@ -37,7 +37,7 @@ export function Warmup({ faceFound, seed }: { faceFound: boolean; seed: number }
           style={{
             margin: '24px 0 0',
             fontSize: 38,
-            color: 'var(--paper-dim)',
+            color: 'var(--ink-dim)',
             opacity: faceFound ? 1 : 0,
             transition: 'opacity 600ms ease',
           }}

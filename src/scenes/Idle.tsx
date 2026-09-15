@@ -28,10 +28,11 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 'var(--w-display)',
             fontSize: 132,
             lineHeight: 0.95,
             letterSpacing: '-0.045em',
+            color: 'var(--blue)',
           }}
         >
           {greeting.hello}
@@ -41,11 +42,11 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 700,
+            fontWeight: 'var(--w-display-strong)',
             fontSize: 72,
             lineHeight: 1.12,
             letterSpacing: '-0.03em',
-            color: 'var(--magenta-lit)',
+            color: 'var(--magenta)',
             maxWidth: 820,
           }}
         >
@@ -59,7 +60,7 @@ export function Idle({ daypart, seed }: { daypart: Daypart; seed: number }) {
             margin: '28px 0 0',
             fontSize: 38,
             lineHeight: 1.45,
-            color: 'var(--paper-dim)',
+            color: 'var(--ink-dim)',
             maxWidth: 760,
           }}
         >

@@ -3,8 +3,8 @@ import './app.css';
 import { Stage } from './kiosk/Stage';
 import { usePress } from './kiosk/usePress';
 import { useIdleTimeout } from './kiosk/useIdleTimeout';
-import { LavaLamp } from './lava/LavaLamp';
-import { IDLE_PALETTE, MOODS, type MoodId } from './mood/moods';
+import { Backdrop } from './backdrop/Backdrop';
+import { IDLE_TINT, MOODS, type MoodId } from './mood/moods';
 import { classifyMood } from './mood/classify';
 import { pickFood } from './recommend/pickFood';
 import { canPress, freshSession, reduce, type SceneId } from './story/machine';
@@ -235,7 +235,7 @@ export function App() {
   // ── background ───────────────────────────────────────────────────────────
 
   const revealed = scene === 'reading' || scene === 'mood' || scene === 'encouragement' || scene === 'food' || scene === 'thanks';
-  const palette = revealed && session.mood ? MOODS[session.mood].palette : IDLE_PALETTE;
+  const tint = revealed && session.mood ? MOODS[session.mood].tint : IDLE_TINT;
 
   const intensity =
     scene === 'reading' ? 1 : scene === 'capture' ? 0.5 : scene === 'smile' ? vision.state.smile * 0.5 : scene === 'mood' ? 0.35 : 0;
@@ -244,8 +244,7 @@ export function App() {
 
   return (
     <>
-      <LavaLamp palette={palette} intensity={intensity} />
-      <div className="scrim" aria-hidden />
+      <Backdrop tint={tint} intensity={intensity} />
 
       <Stage>
         <CameraView

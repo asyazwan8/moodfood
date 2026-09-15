@@ -28,7 +28,7 @@ export function Encouragement({ mood, seed }: { mood: MoodId; seed: number }) {
           onDone={() => setFinished(true)}
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 700,
+            fontWeight: 'var(--w-display-strong)',
             fontSize: 62,
             lineHeight: 1.22,
             letterSpacing: '-0.03em',

@@ -33,7 +33,7 @@ export function Consent({
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 'var(--w-display)',
             fontSize: 96,
             lineHeight: 1.02,
             letterSpacing: '-0.04em',
@@ -47,7 +47,7 @@ export function Consent({
           <>
             <p style={bodyStyle}>{CONSENT.denied.body}</p>
             {errorMessage && (
-              <p style={{ ...bodyStyle, fontSize: 30, color: 'var(--paper-faint)' }}>{errorMessage}</p>
+              <p style={{ ...bodyStyle, fontSize: 30, color: 'var(--ink-faint)' }}>{errorMessage}</p>
             )}
           </>
         ) : (
@@ -87,7 +87,7 @@ const bodyStyle: React.CSSProperties = {
   margin: 0,
   fontSize: 42,
   lineHeight: 1.5,
-  color: 'var(--paper-dim)',
+  color: 'var(--ink-dim)',
   maxWidth: 840,
 };
 
@@ -95,10 +95,10 @@ const primaryButton: React.CSSProperties = {
   appearance: 'none',
   border: 'none',
   borderRadius: 'var(--r-pill)',
-  background: 'var(--paper)',
-  color: 'var(--ink)',
+  background: 'var(--blue)',
+  color: 'var(--paper)',
   fontFamily: 'var(--font-display)',
-  fontWeight: 900,
+  fontWeight: 'var(--w-display)',
   fontSize: 46,
   padding: '42px 56px',
   cursor: 'pointer',
@@ -109,7 +109,7 @@ const secondaryButton: React.CSSProperties = {
   appearance: 'none',
   border: 'none',
   background: 'transparent',
-  color: 'var(--paper-faint)',
+  color: 'var(--ink-faint)',
   fontFamily: 'var(--font-body)',
   fontSize: 32,
   padding: 18,

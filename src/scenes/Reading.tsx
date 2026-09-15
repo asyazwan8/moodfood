@@ -28,10 +28,10 @@ export function Reading({ seed }: { seed: number }) {
           style={{
             margin: 0,
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 'var(--w-display-strong)',
             fontSize: 62,
             letterSpacing: '-0.03em',
-            color: 'var(--paper-dim)',
+            color: 'var(--ink-dim)',
           }}
         >
           {pickFrom(READING, seed)}

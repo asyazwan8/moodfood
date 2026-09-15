@@ -21,11 +21,11 @@ export function Capture({ count, flashing }: { count: number; flashing: boolean 
             className="count"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 'var(--w-display)',
               fontSize: 420,
               lineHeight: 1,
-              color: 'var(--paper)',
-              textShadow: '0 0 120px rgba(0,0,0,.6)',
+              color: 'var(--blue)',
+              textShadow: '0 8px 50px rgba(255,255,255,.9)',
             }}
           >
             {numeral}

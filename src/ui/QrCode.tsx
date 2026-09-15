@@ -15,7 +15,7 @@ export function QrCode({ value, size = 260 }: { value: string; size?: number }) 
     QRCode.toCanvas(canvas, value, {
       width: size,
       margin: 1,
-      color: { dark: '#140A1E', light: '#FFF4E6' },
+      color: { dark: '#0047B9', light: '#FFFFFF' },
       errorCorrectionLevel: 'M',
     }).catch(() => {
       /* nothing useful to do at a kiosk — the caption still tells them where to go */

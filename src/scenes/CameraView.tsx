@@ -41,8 +41,8 @@ export function CameraView({
           width: '100%',
           height: '100%',
           overflow: 'hidden',
-          background: 'var(--ink-soft)',
-          boxShadow: '0 0 0 3px rgba(242,246,255,.16), 0 50px 120px rgba(0,0,0,.6)',
+          background: 'var(--paper-soft)',
+          boxShadow: '0 0 0 3px rgba(255,255,255,.9), 0 40px 90px rgba(10,19,48,.22)',
           display: 'grid',
           placeItems: 'center',
           position: 'relative',
@@ -59,7 +59,7 @@ export function CameraView({
             width: diameter * 0.34,
             height: diameter * 0.34,
             borderRadius: '50%',
-            border: '3px solid rgba(242,246,255,.14)',
+            border: '3px solid rgba(10,19,48,.12)',
           }}
         />
         <video
