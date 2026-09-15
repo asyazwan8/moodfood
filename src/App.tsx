@@ -244,9 +244,8 @@ export function App() {
 
   return (
     <>
-      <Backdrop tint={tint} intensity={intensity} />
-
       <Stage>
+        <Backdrop tint={tint} intensity={intensity} />
         <CameraView
           videoRef={vision.videoRef}
           diameter={camera.diameter}

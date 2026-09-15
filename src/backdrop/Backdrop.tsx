@@ -25,7 +25,7 @@ export function Backdrop({ tint, intensity = 0 }: { tint: BackdropTint; intensit
   }, []);
 
   return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: 'var(--paper)' }}>
+    <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: 'var(--paper)' }}>
       <div
         className="backdrop-drift"
         style={{
