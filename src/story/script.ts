@@ -82,23 +82,74 @@ export const WARMUP = {
   holding: 'Stay there. Just be normal for a second.',
 };
 
-// ── 4. smile gate ──────────────────────────────────────────────────────────
+// ── 4. the face exercises ──────────────────────────────────────────────────
 
-/** Tiers are checked from the top down against the live smile score. */
-export const SMILE = {
-  prompt: 'Now. Best smile you have got.',
-  tiers: [
-    { above: 0.82, line: 'THERE it is!' },
-    { above: 0.55, line: 'Yes — more of that.' },
-    { above: 0.28, line: 'That is a polite smile lah. Give me a real one.' },
-    { above: 0.0, line: 'Come on. Nobody is watching. Well. I am.' },
+/**
+ * Four rounds. The visitor performs each expression and the kiosk confirms it.
+ *
+ * This replaced a passive read taken while the visitor stood still — which
+ * returned "Steady" for almost everybody, because a resting face at a kiosk is
+ * just neutral. Making them perform is both more reliable and the most fun
+ * part of the whole thing.
+ *
+ * `escape` is used when a round runs out of time. It must never read as
+ * failure: face-api is genuinely poor at angry and sad, so plenty of people
+ * will not trigger them however hard they try, and being told they failed at
+ * having a feeling is a miserable note to hit in a shopping mall.
+ */
+export const EXERCISES = {
+  intro: 'Four faces. Give me your best.',
+  counter: (n: number, total: number) => `${n} of ${total}`,
+  escape: [
+    'Close enough lah. Next.',
+    'We will take it. Next one.',
+    'Good enough for me. Keep going.',
   ],
-  holding: 'Hold it…',
+  got: ['Got it.', 'There it is.', 'Yes — that one.', 'Perfect.'],
 };
 
-// ── 5. capture ─────────────────────────────────────────────────────────────
+export type ExercisePrompt = {
+  /** Big line at the bottom of the screen. */
+  prompt: string;
+  /** Reactions, checked top down against progress toward the threshold. */
+  tiers: { above: number; line: string }[];
+};
 
-export const CAPTURE = { hold: 'Hold it…', count: ['3', '2', '1'] };
+/** Keyed by exercise id — see src/mood/classify.ts for the channels. */
+export const EXERCISE_COPY: Record<string, ExercisePrompt> = {
+  smile: {
+    prompt: 'Start easy. Give me a smile.',
+    tiers: [
+      { above: 0.85, line: 'There you go.' },
+      { above: 0.45, line: 'A bit more than that.' },
+      { above: 0.0, line: 'Any smile. I am not fussy.' },
+    ],
+  },
+  angry: {
+    prompt: 'Now — angry. Properly angry.',
+    tiers: [
+      { above: 0.85, line: 'Ooh. Who hurt you?' },
+      { above: 0.45, line: 'More eyebrows. Really commit.' },
+      { above: 0.0, line: 'Think about the parking. That usually does it.' },
+    ],
+  },
+  sad: {
+    prompt: 'Sad now. Properly tragic.',
+    tiers: [
+      { above: 0.85, line: 'Oh no. Beautiful though.' },
+      { above: 0.45, line: 'Let the mouth go. Almost.' },
+      { above: 0.0, line: 'Think about Monday morning.' },
+    ],
+  },
+  laugh: {
+    prompt: 'Last one. Big laugh.',
+    tiers: [
+      { above: 0.85, line: 'THAT is the one.' },
+      { above: 0.45, line: 'Bigger! Teeth!' },
+      { above: 0.0, line: 'Do not think about it, just laugh.' },
+    ],
+  },
+};
 
 // ── 6. reading ─────────────────────────────────────────────────────────────
 
@@ -193,9 +244,18 @@ export function newSeed(): number {
   return Math.floor(Math.random() * 1_000_000);
 }
 
-export function smileLine(smile: number): string {
-  for (const tier of SMILE.tiers) {
-    if (smile > tier.above) return tier.line;
+/**
+ * The live reaction line for a round.
+ *
+ * `progress` is how far toward the threshold the visitor has got, 0..1+, NOT
+ * the raw expression score — the channels are not comparable, so 0.4 of the
+ * way to an angry face and 0.4 of the way to a smile should read the same.
+ */
+export function reactionLine(exerciseId: string, progress: number): string {
+  const copy = EXERCISE_COPY[exerciseId];
+  if (!copy) return '';
+  for (const tier of copy.tiers) {
+    if (progress > tier.above) return tier.line;
   }
-  return SMILE.tiers[SMILE.tiers.length - 1]?.line ?? SMILE.prompt;
+  return copy.tiers[copy.tiers.length - 1]?.line ?? copy.prompt;
 }

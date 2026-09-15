@@ -5,7 +5,7 @@ import { usePress } from './kiosk/usePress';
 import { useIdleTimeout } from './kiosk/useIdleTimeout';
 import { Backdrop } from './backdrop/Backdrop';
 import { IDLE_TINT, MOODS, type MoodId } from './mood/moods';
-import { classifyMood } from './mood/classify';
+import { EXERCISES, ROUND_TIMEOUT_MS, moodFromExercises, type Attempt } from './mood/classify';
 import { pickFood } from './recommend/pickFood';
 import { canPress, freshSession, reduce, type SceneId } from './story/machine';
 import { useVision } from './vision/useVision';
@@ -13,8 +13,7 @@ import { CameraView } from './scenes/CameraView';
 import { Idle } from './scenes/Idle';
 import { Consent } from './scenes/Consent';
 import { Warmup } from './scenes/Warmup';
-import { SmileGate } from './scenes/SmileGate';
-import { Capture } from './scenes/Capture';
+import { Exercises } from './scenes/Exercises';
 import { Reading } from './scenes/Reading';
 import { MoodReveal } from './scenes/MoodReveal';
 import { Encouragement } from './scenes/Encouragement';
@@ -22,17 +21,14 @@ import { FoodPick } from './scenes/FoodPick';
 import { Thanks } from './scenes/Thanks';
 import { DebugPanel } from './kiosk/DebugPanel';
 
-/** How long a face has to be held before we trust the candid mood read. */
+/** How long a face has to be held before we believe we have found someone. */
 const FACE_STABLE_MS = 1800;
 /** Give up looking and move on rather than stranding someone on a dead screen. */
 const WARMUP_TIMEOUT_MS = 12_000;
 
-const SMILE_TARGET = 0.6;
-const SMILE_HOLD_MS = 900;
-/** Some people will not smile at a machine. Let them through anyway. */
-const SMILE_TIMEOUT_MS = 20_000;
+/** How long the flash and "got it" beat hold before the next round starts. */
+const ROUND_SETTLE_MS = 1100;
 
-const COUNT_MS = 750;
 const READING_MS = 2200;
 const THANKS_MS = 14_000;
 const IDLE_TIMEOUT_MS = 45_000;
@@ -64,9 +60,7 @@ export function App() {
   visionRef.current = vision.state;
 
   const { scene } = session;
-  const [count, setCount] = useState(0);
-  const [flashing, setFlashing] = useState(false);
-  const [smileHolding, setSmileHolding] = useState(false);
+  const [round, setRound] = useState({ index: 0, hit: false, escaped: false, flashing: false });
 
   useEffect(() => {
     document.body.dataset.debug = debug ? '1' : '0';
@@ -112,12 +106,11 @@ export function App() {
     }
   }, [scene, vision.state.cameraState, vision.state.modelsReady]);
 
-  // ── warmup: the candid mood read ─────────────────────────────────────────
+  // ── warmup: find the face ────────────────────────────────────────────────
 
   useEffect(() => {
     if (scene !== 'warmup') return;
 
-    vision.beginCandid();
     const started = performance.now();
     let faceSince: number | null = null;
     let done = false;
@@ -125,8 +118,7 @@ export function App() {
     const finish = () => {
       if (done) return;
       done = true;
-      const expressions = vision.endCandid();
-      dispatch({ type: 'moodRead', mood: forcedMood ?? classifyMood(expressions, session.daypart) });
+      dispatch({ type: 'faceFound' });
     };
 
     const id = window.setInterval(() => {
@@ -141,66 +133,85 @@ export function App() {
     }, 120);
 
     return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
-  // ── smile gate ───────────────────────────────────────────────────────────
+  // ── the exercise rounds ──────────────────────────────────────────────────
 
   useEffect(() => {
-    if (scene !== 'smile') {
-      setSmileHolding(false);
+    if (scene !== 'exercises') {
+      setRound({ index: 0, hit: false, escaped: false, flashing: false });
       return;
     }
 
-    const started = performance.now();
-    let heldSince: number | null = null;
+    let index = 0;
+    let cancelled = false;
+    let poll = 0;
+    const attempts: Attempt[] = [];
+    const shots: (string | null)[] = [];
+    const timeouts: number[] = [];
 
-    const id = window.setInterval(() => {
-      const now = performance.now();
-      const smiling = visionRef.current.smile >= SMILE_TARGET;
+    const closeRound = (escaped: boolean) => {
+      const result = vision.endRound();
+      attempts.push({
+        exerciseId: result.exerciseId,
+        peak: result.peak,
+        timeToHit: result.timeToHit,
+      });
+      shots.push(result.photo);
+      setRound({ index, hit: !escaped, escaped, flashing: !escaped });
 
-      if (smiling) {
-        heldSince ??= now;
-        setSmileHolding(true);
-        if (now - heldSince >= SMILE_HOLD_MS) {
-          window.clearInterval(id);
-          dispatch({ type: 'smiled' });
+      timeouts.push(
+        window.setTimeout(() => {
+          if (cancelled) return;
+          index += 1;
+          if (index >= EXERCISES.length) {
+            dispatch({
+              type: 'exercisesDone',
+              mood:
+                forcedMood ??
+                moodFromExercises(attempts, vision.sessionPeaks(), session.daypart),
+              shots,
+            });
+            return;
+          }
+          startRound();
+        }, ROUND_SETTLE_MS),
+      );
+    };
+
+    const startRound = () => {
+      const exercise = EXERCISES[index];
+      if (!exercise) return;
+      vision.beginRound(exercise);
+      setRound({ index, hit: false, escaped: false, flashing: false });
+
+      const startedAt = performance.now();
+      poll = window.setInterval(() => {
+        if (cancelled) return;
+        const value = visionRef.current.expressions[exercise.channel];
+        const elapsed = performance.now() - startedAt;
+
+        if (value >= exercise.threshold) {
+          window.clearInterval(poll);
+          closeRound(false);
+        } else if (elapsed >= ROUND_TIMEOUT_MS) {
+          // Not a failure. face-api genuinely struggles with angry and sad, so
+          // plenty of people cannot trigger them however hard they try — and
+          // being told you failed at having a feeling is a bad note to hit in
+          // the middle of a shopping mall.
+          window.clearInterval(poll);
+          closeRound(true);
         }
-      } else {
-        heldSince = null;
-        setSmileHolding(false);
-      }
+      }, 90);
+    };
 
-      if (now - started >= SMILE_TIMEOUT_MS) {
-        window.clearInterval(id);
-        dispatch({ type: 'smiled' });
-      }
-    }, 100);
+    startRound();
 
-    return () => window.clearInterval(id);
-  }, [scene]);
-
-  // ── capture ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (scene !== 'capture') {
-      setCount(0);
-      setFlashing(false);
-      return;
-    }
-
-    setCount(0);
-    const timers: number[] = [];
-    timers.push(window.setTimeout(() => setCount(1), COUNT_MS));
-    timers.push(window.setTimeout(() => setCount(2), COUNT_MS * 2));
-    timers.push(
-      window.setTimeout(() => {
-        setFlashing(true);
-        dispatch({ type: 'captured', photo: vision.capture() });
-      }, COUNT_MS * 3),
-    );
-
-    return () => timers.forEach(window.clearTimeout);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+      timeouts.forEach(window.clearTimeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
@@ -234,13 +245,22 @@ export function App() {
 
   // ── background ───────────────────────────────────────────────────────────
 
-  const revealed = scene === 'reading' || scene === 'mood' || scene === 'encouragement' || scene === 'food' || scene === 'thanks';
+  const revealed =
+    scene === 'reading' ||
+    scene === 'mood' ||
+    scene === 'encouragement' ||
+    scene === 'food' ||
+    scene === 'thanks';
   const tint = revealed && session.mood ? MOODS[session.mood].tint : IDLE_TINT;
 
   const intensity =
-    scene === 'reading' ? 1 : scene === 'capture' ? 0.5 : scene === 'smile' ? vision.state.smile * 0.5 : scene === 'mood' ? 0.35 : 0;
+    scene === 'reading' ? 1 : scene === 'exercises' ? 0.3 : scene === 'mood' ? 0.35 : 0;
 
   const camera = cameraLayout(scene);
+  const activeExercise = EXERCISES[round.index];
+  const channelValue = activeExercise
+    ? vision.state.expressions[activeExercise.channel]
+    : 0;
 
   return (
     <>
@@ -251,7 +271,6 @@ export function App() {
           diameter={camera.diameter}
           top={camera.top}
           visible={camera.visible}
-          dim={scene === 'capture'}
         />
         {renderScene()}
         {/* Long-press the top-left corner for three seconds to get the panel
@@ -264,7 +283,9 @@ export function App() {
           scene={scene}
           session={session}
           vision={vision.state}
-          smileTarget={SMILE_TARGET}
+          exerciseId={activeExercise?.id ?? null}
+          channelValue={channelValue}
+          threshold={activeExercise?.threshold ?? 0}
           onJump={(next) => jumpTo(next)}
           onReset={goIdle}
           onClose={() => setDebug(false)}
@@ -288,14 +309,22 @@ export function App() {
         );
       case 'warmup':
         return <Warmup faceFound={vision.state.faceFound} seed={session.seed} />;
-      case 'smile':
-        return <SmileGate smile={vision.state.smile} target={SMILE_TARGET} holding={smileHolding} />;
-      case 'capture':
-        return <Capture count={count} flashing={flashing} />;
+      case 'exercises':
+        return (
+          <Exercises
+            index={round.index}
+            value={channelValue}
+            progress={activeExercise ? channelValue / activeExercise.threshold : 0}
+            hit={round.hit}
+            escaped={round.escaped}
+            flashing={round.flashing}
+            seed={session.seed}
+          />
+        );
       case 'reading':
         return <Reading seed={session.seed} />;
       case 'mood':
-        return <MoodReveal mood={session.mood ?? 'steady'} photo={session.photo} />;
+        return <MoodReveal mood={session.mood ?? 'steady'} shots={session.shots} />;
       case 'encouragement':
         return <Encouragement mood={session.mood ?? 'steady'} seed={session.seed} />;
       case 'food': {
@@ -323,11 +352,10 @@ export function App() {
     window.setTimeout(() => {
       dispatch({ type: 'start' });
       dispatch({ type: 'cameraReady' });
-      dispatch({ type: 'moodRead', mood });
-      if (next === 'smile') return;
-      dispatch({ type: 'smiled' });
-      if (next === 'capture') return;
-      dispatch({ type: 'captured', photo: vision.capture() });
+      if (next === 'warmup') return;
+      dispatch({ type: 'faceFound' });
+      if (next === 'exercises') return;
+      dispatch({ type: 'exercisesDone', mood, shots: [null, null, null, null] });
       if (next === 'reading') return;
       dispatch({ type: 'readingDone' });
       if (next === 'mood') return;
@@ -345,12 +373,11 @@ function cameraLayout(scene: SceneId): { diameter: number; top: number; visible:
   switch (scene) {
     case 'warmup':
       return { diameter: 640, top: 560, visible: true };
-    case 'smile':
-    case 'capture':
-      // Centred inside the 700px smile ring, which sits at top: 470.
-      return { diameter: 560, top: 540, visible: true };
+    case 'exercises':
+      // Centred inside the 700px meter ring, which sits at top: 420.
+      return { diameter: 560, top: 490, visible: true };
     default:
-      return { diameter: 560, top: 540, visible: false };
+      return { diameter: 560, top: 490, visible: false };
   }
 }
 

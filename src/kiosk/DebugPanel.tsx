@@ -14,7 +14,9 @@ export function DebugPanel({
   scene,
   session,
   vision,
-  smileTarget,
+  exerciseId,
+  channelValue,
+  threshold,
   onJump,
   onReset,
   onClose,
@@ -22,7 +24,12 @@ export function DebugPanel({
   scene: SceneId;
   session: Session;
   vision: VisionState;
-  smileTarget: number;
+  /** The round in progress, if any. */
+  exerciseId: string | null;
+  /** Live value of that round's channel. */
+  channelValue: number;
+  /** What it has to reach. */
+  threshold: number;
   onJump: (scene: SceneId) => void;
   onReset: () => void;
   onClose: () => void;
@@ -46,15 +53,17 @@ export function DebugPanel({
       <Row label="daypart" value={session.daypart} />
       {vision.errorMessage && <Row label="error" value={vision.errorMessage} />}
 
+      {/* The round meter. This is the read-out to tune thresholds against a
+          real face — expect angry and sad to need the most adjustment. */}
       <div style={{ margin: '12px 0 6px', opacity: 0.6, fontSize: 11 }}>
-        smile {vision.smile.toFixed(2)} / target {smileTarget}
+        {exerciseId ? `${exerciseId} ${channelValue.toFixed(2)} / need ${threshold}` : 'no round'}
       </div>
       <div style={{ height: 6, background: '#333', borderRadius: 3, overflow: 'hidden', marginBottom: 12 }}>
         <div
           style={{
-            width: `${Math.min(100, vision.smile * 100)}%`,
+            width: `${Math.min(100, threshold ? (channelValue / threshold) * 100 : 0)}%`,
             height: '100%',
-            background: vision.smile >= smileTarget ? '#7CFF9B' : '#FFB03B',
+            background: channelValue >= threshold ? '#7CFF9B' : '#FFB03B',
           }}
         />
       </div>

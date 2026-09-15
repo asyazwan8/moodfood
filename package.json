@@ -7,10 +7,11 @@
   "scripts": {
     "postinstall": "node scripts/copy-models.mjs",
     "dev": "vite --host",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && npm run test && vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
-    "models": "node scripts/copy-models.mjs"
+    "models": "node scripts/copy-models.mjs",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/mood/scoring.test.mts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.5",

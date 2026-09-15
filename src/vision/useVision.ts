@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { detect, loadFaceApi, type FaceBox } from './faceApi';
-import { EMPTY_EXPRESSIONS, type Expressions, averageExpressions } from '../mood/classify';
+import { EMPTY_EXPRESSIONS, type Exercise, type Expressions } from '../mood/classify';
 
 export type CameraState = 'off' | 'requesting' | 'live' | 'denied' | 'error';
 
@@ -8,18 +8,27 @@ export type VisionState = {
   cameraState: CameraState;
   modelsReady: boolean;
   faceFound: boolean;
-  /** Live "how big is that smile" signal, 0..1. Drives the smile meter. */
-  smile: number;
+  /** Live probabilities. The active round reads its own channel out of this. */
   expressions: Expressions;
   box: FaceBox | null;
   errorMessage: string | null;
+};
+
+/** What one exercise round produced. */
+export type RoundResult = {
+  exerciseId: string;
+  /** Highest the round's channel reached. */
+  peak: number;
+  /** ms to cross the threshold, or null if it never did. */
+  timeToHit: number | null;
+  /** The frame captured at the round's strongest moment. */
+  photo: string | null;
 };
 
 const INITIAL: VisionState = {
   cameraState: 'off',
   modelsReady: false,
   faceFound: false,
-  smile: 0,
   expressions: EMPTY_EXPRESSIONS,
   box: null,
   errorMessage: null,
@@ -29,7 +38,7 @@ const INITIAL: VisionState = {
 const TICK_MS = 80;
 
 /**
- * Owns the camera, the detection loop, the candid mood sample and the photo.
+ * Owns the camera, the detection loop, the exercise rounds and the photos.
  *
  * PRIVACY: frames never leave this hook. Nothing is uploaded, nothing is
  * written to storage. `stop()` hard-releases the camera track and drops the
@@ -42,10 +51,21 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
   const loopRef = useRef<number | null>(null);
   const runningRef = useRef(false);
 
-  /** Candid samples, collected during `warmup` only — see classifyMood. */
-  const candidRef = useRef<Expressions[] | null>(null);
-  /** Best smiling frame seen during the smile gate, so the photo flatters. */
-  const bestSmileFrameRef = useRef<{ smile: number; dataUrl: string } | null>(null);
+  /**
+   * The round in progress. Holds its own peak and photo so each exercise is
+   * scored and photographed independently.
+   */
+  const roundRef = useRef<
+    | (RoundResult & { exercise: Exercise; startedAt: number })
+    | null
+  >(null);
+
+  /**
+   * Highest each channel reached across the WHOLE session, not just its own
+   * round. This is how the secondary moods stay reachable — someone visibly
+   * startled throughout is saying something the four rounds never ask about.
+   */
+  const peaksRef = useRef<Expressions>({ ...EMPTY_EXPRESSIONS });
 
   const [state, setState] = useState<VisionState>(INITIAL);
   const mockStartRef = useRef(0);
@@ -60,8 +80,8 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
     streamRef.current = null;
     const video = videoRef.current;
     if (video) video.srcObject = null;
-    candidRef.current = null;
-    bestSmileFrameRef.current = null;
+    roundRef.current = null;
+    peaksRef.current = { ...EMPTY_EXPRESSIONS };
     setState(INITIAL);
   }, []);
 
@@ -137,17 +157,15 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
         if (!runningRef.current) return;
 
         if (result) {
-          candidRef.current?.push(result.expressions);
-          rememberBestSmile(result.expressions.happy, video, result.box, bestSmileFrameRef);
+          record(result.expressions, video, result.box);
           setState((s) => ({
             ...s,
             faceFound: true,
-            smile: result.expressions.happy,
             expressions: result.expressions,
             box: result.box,
           }));
         } else {
-          setState((s) => (s.faceFound ? { ...s, faceFound: false, smile: 0, box: null } : s));
+          setState((s) => (s.faceFound ? { ...s, faceFound: false, box: null } : s));
         }
       } catch {
         /* a dropped frame is not worth ending the story over */
@@ -159,76 +177,104 @@ export function useVision({ mock = false }: { mock?: boolean } = {}) {
 
   const tickMock = useCallback(() => {
     if (!runningRef.current) return;
-    const t = (performance.now() - mockStartRef.current) / 1000;
-
-    // A face "appears" after a beat, then the smile swells and fades so the
-    // smile gate can be walked through with no camera and no face.
+    const now = performance.now();
+    const t = (now - mockStartRef.current) / 1000;
     const faceFound = t > 0.8;
-    const smile = faceFound ? Math.max(0, Math.sin((t - 0.8) * 1.1)) ** 0.7 : 0;
-    const expressions: Expressions = {
-      ...EMPTY_EXPRESSIONS,
-      neutral: 0.62,
-      happy: smile,
-      sad: 0.12,
-    };
 
-    if (faceFound) candidRef.current?.push(expressions);
+    // Raise whichever channel the current round is watching, so a ?mock=1
+    // walkthrough actually completes all four rounds instead of timing out of
+    // every one of them. Ramps over ~1.6s from the round starting.
+    const round = roundRef.current;
+    const expressions: Expressions = { ...EMPTY_EXPRESSIONS, neutral: 0.7 };
+    if (faceFound && round) {
+      const since = (now - round.startedAt) / 1000;
+      const ramp = Math.min(1, Math.max(0, since / 1.6));
+      expressions[round.exercise.channel] = ramp * (round.exercise.threshold + 0.18);
+      expressions.neutral = 0.7 * (1 - ramp);
+    } else if (faceFound) {
+      expressions.happy = 0.1;
+    }
+
+    if (faceFound) record(expressions, null, null);
     setState((s) => ({
       ...s,
       faceFound,
-      smile,
       expressions,
       box: faceFound ? { x: 0.3, y: 0.18, width: 0.4, height: 0.5 } : null,
     }));
 
     loopRef.current = window.setTimeout(tickMock, TICK_MS);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mock]);
+
+  /**
+   * Folds one detection into the session peaks and the round in progress.
+   * Shared by both loops so mock and real behave identically downstream.
+   */
+  const record = useCallback(
+    (expressions: Expressions, video: HTMLVideoElement | null, box: FaceBox | null) => {
+      const peaks = peaksRef.current;
+      for (const key of Object.keys(expressions) as (keyof Expressions)[]) {
+        if (expressions[key] > peaks[key]) peaks[key] = expressions[key];
+      }
+
+      const round = roundRef.current;
+      if (!round) return;
+
+      const value = expressions[round.exercise.channel];
+      if (value > round.peak) {
+        round.peak = value;
+        // Photograph the round at its strongest moment, so the strip shows the
+        // best version of each face rather than whatever was on screen when
+        // the threshold happened to tick over.
+        if (value > round.exercise.threshold * 0.6) {
+          const shot = mock ? mockPhoto() : video ? framePhoto(video, box) : null;
+          if (shot) round.photo = shot;
+        }
+      }
+      if (round.timeToHit === null && value >= round.exercise.threshold) {
+        round.timeToHit = performance.now() - round.startedAt;
+      }
+    },
+    [mock],
+  );
 
   useEffect(() => stop, [stop]);
 
   // ── the bits the story drives ────────────────────────────────────────────
 
-  /** Start collecting the candid read. Called on entering `warmup`. */
-  const beginCandid = useCallback(() => {
-    candidRef.current = [];
+  /** Open a round. Everything recorded from here is scored against it. */
+  const beginRound = useCallback((exercise: Exercise) => {
+    roundRef.current = {
+      exercise,
+      exerciseId: exercise.id,
+      startedAt: performance.now(),
+      peak: 0,
+      timeToHit: null,
+      photo: null,
+    };
   }, []);
 
-  /** Close the candid window and hand back the averaged read. */
-  const endCandid = useCallback((): Expressions => {
-    const samples = candidRef.current ?? [];
-    candidRef.current = null;
-    return averageExpressions(samples);
+  /** Close the round and hand back what it scored. */
+  const endRound = useCallback((): RoundResult => {
+    const round = roundRef.current;
+    roundRef.current = null;
+    if (!round) return { exerciseId: '', peak: 0, timeToHit: null, photo: null };
+    return {
+      exerciseId: round.exerciseId,
+      peak: round.peak,
+      timeToHit: round.timeToHit,
+      photo: round.photo,
+    };
   }, []);
 
-  /**
-   * The photo. Prefers the best smiling frame captured during the gate, so
-   * nobody gets handed a picture of themselves mid-blink.
-   */
-  const capture = useCallback((): string | null => {
-    if (mock) return mockPhoto();
-    const remembered = bestSmileFrameRef.current;
-    if (remembered) return remembered.dataUrl;
-    const video = videoRef.current;
-    return video ? framePhoto(video, null) : null;
-  }, [mock]);
+  /** Session-wide channel peaks, for the secondary moods. */
+  const sessionPeaks = useCallback(() => ({ ...peaksRef.current }), []);
 
-  return { videoRef, state, start, stop, beginCandid, endCandid, capture };
+  return { videoRef, state, start, stop, beginRound, endRound, sessionPeaks };
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
-
-function rememberBestSmile(
-  smile: number,
-  video: HTMLVideoElement,
-  box: FaceBox,
-  ref: { current: { smile: number; dataUrl: string } | null },
-) {
-  // Only bother re-encoding when this is meaningfully the best frame so far.
-  if (smile < 0.5) return;
-  if (ref.current && smile <= ref.current.smile + 0.05) return;
-  const dataUrl = framePhoto(video, box);
-  if (dataUrl) ref.current = { smile, dataUrl };
-}
 
 /** Draws a mirrored, portrait-cropped still around the face. */
 function framePhoto(video: HTMLVideoElement, box: FaceBox | null): string | null {

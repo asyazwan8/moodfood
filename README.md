@@ -19,6 +19,7 @@ wifi mid-demo and it still finishes the story.
 ```bash
 npm install          # also copies the face models into public/models
 npm run dev          # http://localhost:5173
+npm test             # the mood-scoring assertions
 ```
 
 Then open Chrome DevTools → device toolbar → add a custom device at **1080 × 1920**.
@@ -54,15 +55,34 @@ Grant the camera permission once and Chrome remembers it for that origin.
 
 ## How it actually works
 
-### The mood is read *before* the smile
+### The mood comes from four performed faces
 
-The brief asks for both "analyse the face and show a mood" and "smile to continue". Those
-two fight each other: if the mood were classified after the smile gate, **every single
-visitor would come out Bright** and the reveal would mean nothing.
+The visitor is asked to pull four expressions — **smile, angry, sad, laugh** — and the
+kiosk confirms each one. Whichever came *easiest* decides the mood.
 
-So the mood is sampled candidly during `warmup`, while the visitor is just standing there
-reading the screen. The smile is a ritual that earns the photo — it is not the
-measurement. See `src/mood/classify.ts`.
+This replaced a passive read taken while the visitor stood still reading the screen. That
+version returned **"Steady" for almost everybody**, because a resting face at a kiosk is
+just `neutral ≈ 0.9`. Making people perform is both more reliable and the best part of
+standing in front of it.
+
+Three things in `src/mood/classify.ts` are load-bearing, and `npm test` covers all of them:
+
+- **Scores are relative to each round's own threshold.** face-api reads `happy` superbly
+  and `angry`/`sad` badly — a genuinely furious face often peaks around 0.35. Comparing
+  raw peaks would hand the win to the smile round every time.
+- **Strength is capped at 1.0.** Clearing the bar is clearing it. Without the cap the
+  easiest round always wins: a real laugh is ~1.9x the smile threshold but only ~1.1x the
+  laugh threshold, so someone laughing their head off would be told they were merely Warm.
+- **Smile and laugh are the same channel.** Reaching the laugh threshold means the smile
+  round was sailed through, so the smile result carries no information and is dropped.
+
+**Every round has an ~8s escape**, and it is never presented as failure. Plenty of people
+cannot trigger angry or sad however hard they try, and being told you failed at having a
+feeling is a bad note to hit in a shopping mall.
+
+> ⚠️ **The thresholds are estimates and must be tuned against real faces.** Use `?debug=1`,
+> which shows the live value for the active round against what it needs. Expect `angry` and
+> `sad` to need the most adjustment.
 
 ### Offline by construction
 
@@ -143,9 +163,9 @@ src/
   ui/         typewriter, smile meter, polaroid, QR, press cue
 ```
 
-## The ten beats
+## The nine beats
 
-`idle → consent → warmup → smile → capture → reading → mood → encouragement → food → thanks`
+`idle → consent → warmup → exercises → reading → mood → encouragement → food → thanks`
 
 Each one advances on a press, except the ones the kiosk drives itself. Every self-driven
 scene has a timeout so nobody is ever stranded: no face found, no smile given, camera

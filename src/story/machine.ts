@@ -7,8 +7,7 @@ export type SceneId =
   | 'idle'
   | 'consent'
   | 'warmup'
-  | 'smile'
-  | 'capture'
+  | 'exercises'
   | 'reading'
   | 'mood'
   | 'encouragement'
@@ -20,8 +19,7 @@ export const SCENES: SceneId[] = [
   'idle',
   'consent',
   'warmup',
-  'smile',
-  'capture',
+  'exercises',
   'reading',
   'mood',
   'encouragement',
@@ -35,7 +33,8 @@ export type Session = {
   seed: number;
   daypart: Daypart;
   mood: MoodId | null;
-  photo: string | null;
+  /** One photo per exercise round, in order. Nulls where a round got none. */
+  shots: (string | null)[];
   shortlist: Outlet[];
   foodIndex: number;
   /** True when we finished the story without ever seeing a face. */
@@ -46,9 +45,8 @@ export type Action =
   | { type: 'start' }
   | { type: 'cameraReady' }
   | { type: 'cameraRefused' }
-  | { type: 'moodRead'; mood: MoodId }
-  | { type: 'smiled' }
-  | { type: 'captured'; photo: string | null }
+  | { type: 'faceFound' }
+  | { type: 'exercisesDone'; mood: MoodId; shots: (string | null)[] }
   | { type: 'readingDone' }
   | { type: 'next' }
   | { type: 'shortlist'; outlets: Outlet[] }
@@ -61,7 +59,7 @@ export function freshSession(): Session {
     seed: newSeed(),
     daypart: daypartFor(),
     mood: null,
-    photo: null,
+    shots: [],
     shortlist: [],
     foodIndex: 0,
     blind: false,
@@ -93,17 +91,14 @@ export function reduce(state: Session, action: Action): Session {
     case 'cameraRefused':
       // No face, but we still owe them the ending we promised: skip the parts
       // that would be a lie and go straight to feeding them.
-      return { ...state, scene: 'food', mood: 'steady', blind: true, photo: null };
+      return { ...state, scene: 'food', mood: 'steady', blind: true, shots: [] };
 
-    case 'moodRead':
-      return state.scene === 'warmup' ? { ...state, scene: 'smile', mood: action.mood } : state;
+    case 'faceFound':
+      return state.scene === 'warmup' ? { ...state, scene: 'exercises' } : state;
 
-    case 'smiled':
-      return state.scene === 'smile' ? { ...state, scene: 'capture' } : state;
-
-    case 'captured':
-      return state.scene === 'capture'
-        ? { ...state, scene: 'reading', photo: action.photo }
+    case 'exercisesDone':
+      return state.scene === 'exercises'
+        ? { ...state, scene: 'reading', mood: action.mood, shots: action.shots }
         : state;
 
     case 'readingDone':
